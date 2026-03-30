@@ -1,61 +1,62 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const axios = require('axios'); // Preparado para chamadas iVertex/Bubble
+const axios = require('axios');
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
+const BUBBLE_API_URL = process.env.BUBBLE_API_URL;
+const BUBBLE_TOKEN = process.env.BUBBLE_TOKEN;
 
-// --- SIMULAÇÃO DE BANCO DE DADOS (MOCK) ---
-// Representa o que viria do iVertex e do Bubble
-const dadosOperacionais = [
-    { sala: "01", nome: "João da Silva", tipo: "Sepultamento", local: "Quadra 04", inicio: "08:00" },
-    { sala: "02", nome: "Maria Oliveira", tipo: "Cremação", local: "Bloco A", inicio: "10:00" }
-];
-
-const dadosMemoriais = [
-    { nome: "João da Silva", foto: "https://via.placeholder.com/400", qrCode: "https://memorial.com/joao" },
-    { nome: "Maria Oliveira", foto: "https://via.placeholder.com/400", qrCode: "https://memorial.com/maria" }
-];
-
-// --- ROTAS DA API ---
-
-// 1. Rota para o Painel do Hall (Lista de todas as salas)
-app.get('/api/hall', (req, res) => {
-    res.json(dadosOperacionais);
-});
-
-// 2. Rota para a Porta da Sala (Com o Cruzamento de Dados)
-app.get('/api/sala/:id', (req, res) => {
+app.get('/api/sala/:id', async (req, res) => {
     const salaId = req.params.id;
 
-    // A. Busca no iVertex (Simulado)
-    const velorio = dadosOperacionais.find(v => v.sala === salaId);
+    try {
+        // 1. TENTATIVA NO BUBBLE (Busca por Sala Ativa)
+        // Vamos buscar no Bubble quem está marcado para esta sala hoje
+        const bubbleResponse = await axios.get(BUBBLE_API_URL, {
+            headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` },
+            params: {
+                constraints: JSON.stringify([
+                    { key: "sala_numero_text", constraint_type: "equals", value: salaId },
+                    { key: "status_ativo_boolean", constraint_type: "equals", value: true }
+                ])
+            }
+        });
 
-    if (!velorio) {
-        return res.status(404).json({ erro: "Sala vazia ou não encontrada" });
+        const memorial = bubbleResponse.data.response.results[0];
+
+        if (memorial) {
+            // Se achou no Bubble, montamos o objeto completo
+            return res.json({
+                sala: salaId,
+                nome: memorial.nome_falecido_text || "Homenagem Especial",
+                destino: memorial.local_sepultamento_text || "Consulte a Recepção",
+                horario: memorial.horario_inicio_text || "--:--",
+                foto: memorial.foto_falecido || "https://via.placeholder.com/1080?text=Bosque+da+Esperanca",
+                qrCode: `https://portalmemorial.com.br/memorial/${memorial.slug}`
+            });
+        }
+
+        // 2. SE NÃO ACHAR NO BUBBLE, RETORNA STATUS DE ESPERA
+        res.json({
+            sala: salaId,
+            nome: "Sala disponível",
+            destino: "Bosque da Esperança",
+            horario: "",
+            foto: "https://via.placeholder.com/1080?text=Bosque+da+Esperanca",
+            qrCode: "https://bosquedaesperanca.com.br"
+        });
+
+    } catch (error) {
+        console.error("Erro na integração:", error.message);
+        res.status(500).json({ erro: "Erro ao processar dados" });
     }
-
-    // B. Cruzamento: Busca no Bubble pelo Nome (Simulado)
-    const memorial = dadosMemoriais.find(m => m.nome === velorio.nome);
-
-    // C. Resposta Final Unificada
-    const respostaFinal = {
-        sala: velorio.sala,
-        nome: velorio.nome,
-        destino: `${velorio.tipo} - ${velorio.local}`,
-        horario: velorio.inicio,
-        // Se encontrar no Bubble usa a foto, senão usa uma imagem padrão do Bosque
-        foto: memorial ? memorial.foto : "https://via.placeholder.com/400?text=Bosque+da+Esperanca",
-        qrCode: memorial ? memorial.qrCode : "https://bosquedaesperanca.com.br"
-    };
-
-    res.json(respostaFinal);
 });
 
 app.listen(PORT, () => {
-    console.log(`Servidor SSD Bosque da Esperança rodando na porta ${PORT}`);
+    console.log(`Servidor SSD rodando na porta ${PORT}`);
 });
