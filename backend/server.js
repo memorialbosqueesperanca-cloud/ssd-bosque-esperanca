@@ -11,11 +11,10 @@ const PORT = process.env.PORT || 3000;
 const BUBBLE_API_URL = process.env.BUBBLE_API_URL;
 const BUBBLE_TOKEN = process.env.BUBBLE_TOKEN;
 
+// --- ROTA 1: PORTA DA SALA (Individual) ---
 app.get('/api/sala/:id', async (req, res) => {
     const salaSolicitada = req.params.id;
-
     try {
-        // Busca no Bubble por: sala_cerimonia igual à solicitada E visivel = true
         const response = await axios.get(BUBBLE_API_URL, {
             headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` },
             params: {
@@ -25,26 +24,36 @@ app.get('/api/sala/:id', async (req, res) => {
                 ])
             }
         });
-
         const memorial = response.data.response.results[0];
-
         if (memorial) {
             return res.json({
                 sala: memorial.sala_cerimonia,
                 nome: memorial.falecido_nome,
                 destino: memorial["local da sepultura"] || "Consulte a recepção",
-                horario: "Horário sob consulta", // Campo de horário não identificado no print, podemos adicionar depois
                 foto: memorial["Foto falecido"] ? `https:${memorial["Foto falecido"]}` : "https://via.placeholder.com/1080?text=Bosque+da+Esperanca",
-                qrCode: `https://portalmemorial.com.br/memorial/${memorial._id}` // Usando o ID único do Bubble para o link
+                qrCode: `https://portalmemorial.com.br/memorial/${memorial._id}`
             });
         }
-
         res.json({ nome: "Sala disponível", sala: salaSolicitada, foto: "" });
+    } catch (e) { res.status(500).json({ erro: e.message }); }
+});
 
-    } catch (error) {
-        console.error("Erro Bubble:", error.message);
-        res.status(500).json({ erro: "Erro ao conectar com banco de dados" });
-    }
+// --- ROTA 2: PAINEL DO HALL (Lista completa) ---
+app.get('/api/hall', async (req, res) => {
+    try {
+        const response = await axios.get(BUBBLE_API_URL, {
+            headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` },
+            params: {
+                constraints: JSON.stringify([{ key: "visivel", constraint_type: "equals", value: true }])
+            }
+        });
+        const lista = response.data.response.results.map(item => ({
+            nome: item.falecido_nome,
+            sala: item.sala_cerimonia,
+            destino: item["local da sepultura"] || "Consulte a recepção"
+        }));
+        res.json(lista);
+    } catch (e) { res.status(500).json({ erro: e.message }); }
 });
 
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
