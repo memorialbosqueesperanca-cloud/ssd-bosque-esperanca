@@ -12,51 +12,39 @@ const BUBBLE_API_URL = process.env.BUBBLE_API_URL;
 const BUBBLE_TOKEN = process.env.BUBBLE_TOKEN;
 
 app.get('/api/sala/:id', async (req, res) => {
-    const salaId = req.params.id;
+    const salaSolicitada = req.params.id;
 
     try {
-        // 1. TENTATIVA NO BUBBLE (Busca por Sala Ativa)
-        // Vamos buscar no Bubble quem está marcado para esta sala hoje
-        const bubbleResponse = await axios.get(BUBBLE_API_URL, {
+        // Busca no Bubble por: sala_cerimonia igual à solicitada E visivel = true
+        const response = await axios.get(BUBBLE_API_URL, {
             headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` },
             params: {
                 constraints: JSON.stringify([
-                    { key: "sala_numero_text", constraint_type: "equals", value: salaId },
-                    { key: "status_ativo_boolean", constraint_type: "equals", value: true }
+                    { key: "sala_cerimonia", constraint_type: "equals", value: salaSolicitada },
+                    { key: "visivel", constraint_type: "equals", value: true }
                 ])
             }
         });
 
-        const memorial = bubbleResponse.data.response.results[0];
+        const memorial = response.data.response.results[0];
 
         if (memorial) {
-            // Se achou no Bubble, montamos o objeto completo
             return res.json({
-                sala: salaId,
-                nome: memorial.nome_falecido_text || "Homenagem Especial",
-                destino: memorial.local_sepultamento_text || "Consulte a Recepção",
-                horario: memorial.horario_inicio_text || "--:--",
-                foto: memorial.foto_falecido || "https://via.placeholder.com/1080?text=Bosque+da+Esperanca",
-                qrCode: `https://portalmemorial.com.br/memorial/${memorial.slug}`
+                sala: memorial.sala_cerimonia,
+                nome: memorial.falecido_nome,
+                destino: memorial["local da sepultura"] || "Consulte a recepção",
+                horario: "Horário sob consulta", // Campo de horário não identificado no print, podemos adicionar depois
+                foto: memorial["Foto falecido"] ? `https:${memorial["Foto falecido"]}` : "https://via.placeholder.com/1080?text=Bosque+da+Esperanca",
+                qrCode: `https://portalmemorial.com.br/memorial/${memorial._id}` // Usando o ID único do Bubble para o link
             });
         }
 
-        // 2. SE NÃO ACHAR NO BUBBLE, RETORNA STATUS DE ESPERA
-        res.json({
-            sala: salaId,
-            nome: "Sala disponível",
-            destino: "Bosque da Esperança",
-            horario: "",
-            foto: "https://via.placeholder.com/1080?text=Bosque+da+Esperanca",
-            qrCode: "https://bosquedaesperanca.com.br"
-        });
+        res.json({ nome: "Sala disponível", sala: salaSolicitada, foto: "" });
 
     } catch (error) {
-        console.error("Erro na integração:", error.message);
-        res.status(500).json({ erro: "Erro ao processar dados" });
+        console.error("Erro Bubble:", error.message);
+        res.status(500).json({ erro: "Erro ao conectar com banco de dados" });
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Servidor SSD rodando na porta ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
