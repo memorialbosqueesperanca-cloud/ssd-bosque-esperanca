@@ -43,18 +43,28 @@ app.get('/api/sala/:id', async (req, res) => {
     } catch (e) { res.status(500).json({ erro: e.message }); }
 });
 
-// --- ROTA 2: PAINEL DO HALL (Lista completa) ---
+// --- ROTA 2: PAINEL DO HALL (Somente ativos hoje) ---
 app.get('/api/hall', async (req, res) => {
     try {
+        const agora = new Date();
+        const inicioDoDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 0, 0, 0).toISOString();
+        const fimDoDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59).toISOString();
+
         const response = await axios.get(BUBBLE_API_URL, {
             headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` },
             params: {
-                constraints: JSON.stringify([{ key: "visivel", constraint_type: "equals", value: true }])
+                constraints: JSON.stringify([
+                    { key: "visivel", constraint_type: "equals", value: true },
+                    { key: "data_inicio", constraint_type: "less than", value: fimDoDia },
+                    { key: "data_fim", constraint_type: "greater than", value: inicioDoDia }
+                ])
             }
         });
         const lista = response.data.response.results.map(item => ({
             nome: item.falecido_nome,
             sala: item.sala_cerimonia,
+            horario: item.periodo_velorio || null,
+            foto: item["Foto falecido"] || null,
             destino: item["local da sepultura"] || "Consulte a recepção"
         }));
         res.json(lista);
