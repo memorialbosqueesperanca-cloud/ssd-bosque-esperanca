@@ -74,7 +74,7 @@ function renderizar(lista) {
         const foto = item.foto ? `https:${item.foto}` : 'https://via.placeholder.com/56';
         const status = calcularStatus(item.data_inicio, item.data_fim);
         const destinoFinal = (item.destino && item.destino.trim() !== '')
-            ? `Quadra: ${item.destino}`
+            ? item.destino
             : 'Cremação';
 
         linha.innerHTML = `
@@ -85,7 +85,7 @@ function renderizar(lista) {
             <div class="text-default" style="flex:2.5; font-weight:bold;">${nome}</div>
             <div class="text-default" style="flex:0.8;">Sala ${sala}</div>
             <div class="text-default" style="flex:1.2;">${horario}</div>
-            <div class="text-default" style="flex:1.5; color:#D4AF37; font-weight:700;">${destinoFinal}</div>
+            <div class="text-default" style="flex:1.5; font-weight:700;">${destinoFinal}</div>
             <div class="text-highlight" style="flex:1.2; color:${status.cor};">${status.texto}</div>
         `;
         corpo.appendChild(linha);
