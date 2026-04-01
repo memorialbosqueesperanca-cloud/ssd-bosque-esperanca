@@ -3,31 +3,36 @@
    ========================================================================== */
 
 :root {
-    /* Cores do Bosque */
-    --cor-primaria: #01813D;    /* Verde principal */
-    --cor-secundaria: #B54708;  /* Laranja para destaque */
-    --cor-icone: #FAA507;       /* Amarelo para ícones */
-    --cor-texto-principal: #424543; /* Cinza escuro para textos */
-    --cor-fundo: #FFFFFF;       /* Fundo branco */
-    --cor-texto-light: #FFFFFF; /* Texto sobre fundos escuros */
-
-    /* Tipografia */
+    --cor-primaria: #01813D;
+    --cor-secundaria: #B54708;
+    --cor-icone: #FAA507;
+    --cor-texto-principal: #424543;
+    --cor-fundo: #FFFFFF;
+    --cor-texto-light: #FFFFFF;
     --fonte-principal: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+    /* Tamanhos base escaláveis */
+    --foto-size: clamp(48px, 5vw, 80px);
+    --icon-size: clamp(18px, 2vw, 32px);
+    --header-padding: clamp(12px, 2vw, 32px);
+    --row-padding-v: clamp(12px, 1.5vw, 28px);
+    --row-gap: clamp(12px, 1.5vw, 32px);
+    --font-body: clamp(0.95rem, 1.6vw, 1.8rem);
+    --font-header: clamp(1.1rem, 2.2vw, 2.8rem);
 }
 
 /* ==========================================================================
    2. Estilos Base e Reset
    ========================================================================== */
 
-body,
-html {
+body, html {
     margin: 0;
     padding: 0;
     width: 100%;
     min-height: 100vh;
     font-family: var(--fonte-principal);
     background-color: var(--cor-fundo);
-    overflow-x: hidden; /* Evita rolagem horizontal, mas permite a vertical */
+    overflow-x: hidden;
 }
 
 /* ==========================================================================
@@ -43,35 +48,33 @@ html {
 }
 
 /* ==========================================================================
-   4. Componentes da Interface
+   4. Cabeçalho
    ========================================================================== */
 
-/* Cabeçalho Superior */
 .painel-header {
     width: 100%;
-    min-height: 100px;
     background-color: var(--cor-primaria);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 5%;
+    padding: var(--header-padding) 5%;
     box-sizing: border-box;
-    flex-wrap: wrap;
-    gap: 15px;
+    gap: clamp(10px, 2vw, 30px);
+    min-height: clamp(70px, 9vw, 160px);
 }
 
 .painel-header__logo {
-    max-width: 200px;
-    width: 100%;
+    width: clamp(100px, 14vw, 280px);
     height: auto;
+    flex-shrink: 0;
 }
 
 .painel-header__titulo {
     color: var(--cor-texto-light);
-    font-size: clamp(1.2rem, 2.5vw, 2rem);
+    font-size: var(--font-header);
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     flex: 1;
     text-align: center;
     margin: 0;
@@ -79,29 +82,35 @@ html {
 
 .header-relogio {
     color: var(--cor-texto-light);
-    font-size: clamp(1.2rem, 2.5vw, 2rem);
+    font-size: var(--font-header);
     font-weight: 700;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
-/* Conteúdo Principal (Lista de Voos) */
+/* ==========================================================================
+   5. Conteúdo Principal
+   ========================================================================== */
+
 .painel-main {
-    flex-grow: 1; /* Ocupa o espaço restante */
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
-    padding: 20px 0;
+    padding: clamp(10px, 1.5vw, 30px) 0;
     box-sizing: border-box;
     overflow-y: auto;
 }
 
-/* Linha de Informação */
+/* ==========================================================================
+   6. Linha de Informação (grid de 7 colunas)
+   ========================================================================== */
+
 .info-row {
     display: grid;
-    /* Define as colunas para alinhar os ícones, fotos e textos */
-    grid-template-columns: 24px 60px 2.5fr 0.8fr 1.2fr 1.5fr 1.2fr;
+    grid-template-columns: var(--icon-size) var(--foto-size) 2.5fr 0.8fr 1.3fr 1.4fr 1.2fr;
     align-items: center;
-    gap: 20px;
-    padding: 15px 5%;
+    gap: var(--row-gap);
+    padding: var(--row-padding-v) 5%;
     box-sizing: border-box;
     border-bottom: 1px solid #f0f0f0;
     transition: background-color 0.3s ease;
@@ -111,45 +120,48 @@ html {
     background-color: #fafafa;
 }
 
-/* Elementos Dentro da Linha */
+/* Ícone colorido */
 .info-row__icon {
-    width: 24px;
-    height: 24px;
-    fill: var(--cor-icone); /* Usa a cor de ícone da paleta */
+    width: var(--icon-size);
+    height: var(--icon-size);
+    fill: var(--cor-icone);
 }
 
+/* Foto circular */
 .info-row__foto-wrapper {
-    position: relative;
-    width: 60px;
-    height: 60px;
+    width: var(--foto-size);
+    height: var(--foto-size);
     border-radius: 50%;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f0f0f0; /* Cor de fundo para o placeholder */
+    background-color: #e8e8e8;
     flex-shrink: 0;
 }
 
 .info-row__foto {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Garante que a foto preencha o círculo sem distorcer */
+    object-fit: cover;
 }
 
-/* Estilos de Texto */
+/* ==========================================================================
+   7. Tipografia
+   ========================================================================== */
+
 .text-default {
     color: var(--cor-texto-principal);
-    font-size: clamp(1rem, 1.8vw, 1.4rem);
+    font-size: var(--font-body);
     font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* Adiciona "..." se o texto for muito longo */
+    text-overflow: ellipsis;
 }
 
 .text-highlight {
     color: var(--cor-secundaria);
-    font-size: clamp(1rem, 1.8vw, 1.4rem);
+    font-size: var(--font-body);
     font-weight: 700;
     white-space: nowrap;
     overflow: hidden;
@@ -157,41 +169,119 @@ html {
 }
 
 /* ==========================================================================
-   5. Responsividade (Telas Menores / Dispositivos Móveis)
+   8. Telas médias — tablets em paisagem / monitores pequenos (< 900px)
    ========================================================================== */
 
-@media (max-width: 768px) {
-    .painel-header {
-        flex-direction: column;
-        text-align: center;
-    }
-
+@media (max-width: 900px) {
     .info-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
+        /* Remove icon column, mantém foto */
+        grid-template-columns: var(--foto-size) 2fr 1fr 1.2fr 1.2fr 1fr;
     }
 
     .info-row__icon {
-        display: none; /* Oculta o ícone em telas pequenas para poupar espaço */
+        display: none;
+    }
+}
+
+/* ==========================================================================
+   9. Telas pequenas — celulares e tablets em retrato (< 600px)
+   ========================================================================== */
+
+@media (max-width: 600px) {
+    .painel-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 8px;
+        padding: 16px 5%;
     }
 
-    .text-default:nth-child(3) {
-        flex: 1 1 calc(100% - 80px); /* Preenche a linha junto à foto */
-        font-size: 1.2rem;
-        white-space: normal; /* Permite quebrar linha no nome */
+    .painel-header__logo {
+        width: clamp(80px, 35vw, 160px);
     }
 
-    .text-default:nth-child(4),
-    .text-default:nth-child(5) {
-        flex: 1 1 45%;
-        font-size: 1rem;
+    /* Linha vira card empilhado */
+    .info-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 5%;
+        border-bottom: 2px solid #f0f0f0;
     }
 
+    .info-row__icon {
+        display: none;
+    }
+
+    .info-row__foto-wrapper {
+        width: clamp(44px, 12vw, 60px);
+        height: clamp(44px, 12vw, 60px);
+        flex-shrink: 0;
+    }
+
+    /* Nome ocupa a largura restante na primeira linha */
+    .info-row .text-default:nth-child(3) {
+        flex: 1 1 0;
+        font-size: clamp(1rem, 4vw, 1.3rem);
+        white-space: normal;
+        font-weight: 700;
+    }
+
+    /* Sala, horário e destino ficam na segunda linha */
+    .info-row .text-default:nth-child(4),
+    .info-row .text-default:nth-child(5),
+    .info-row .text-default:nth-child(6) {
+        flex: 1 1 auto;
+        font-size: clamp(0.85rem, 3.5vw, 1.1rem);
+    }
+
+    /* Status ocupa linha própria à direita */
     .text-highlight {
         flex: 1 1 100%;
         text-align: right;
+        font-size: clamp(0.9rem, 3.5vw, 1.1rem);
+        padding-top: 6px;
         border-top: 1px dashed #e0e0e0;
-        padding-top: 8px;
+    }
+}
+
+/* ==========================================================================
+   10. Telas grandes — TVs Full HD e acima (>= 1920px)
+   ========================================================================== */
+
+@media (min-width: 1920px) {
+    :root {
+        --foto-size: clamp(80px, 5vw, 120px);
+        --icon-size: clamp(28px, 2vw, 44px);
+        --header-padding: clamp(24px, 2.5vw, 50px);
+        --row-padding-v: clamp(22px, 2vw, 50px);
+        --row-gap: clamp(24px, 2vw, 50px);
+        --font-body: clamp(1.4rem, 1.5vw, 2.2rem);
+        --font-header: clamp(1.8rem, 2vw, 3.4rem);
+    }
+
+    .info-row {
+        border-bottom: 2px solid #ebebeb;
+    }
+}
+
+/* ==========================================================================
+   11. Telas muito grandes — TVs 4K e painéis (>= 3200px)
+   ========================================================================== */
+
+@media (min-width: 3200px) {
+    :root {
+        --foto-size: clamp(120px, 4.5vw, 180px);
+        --icon-size: clamp(40px, 1.8vw, 64px);
+        --header-padding: clamp(36px, 2vw, 70px);
+        --row-padding-v: clamp(32px, 1.8vw, 70px);
+        --row-gap: clamp(36px, 1.8vw, 72px);
+        --font-body: clamp(2rem, 1.4vw, 3rem);
+        --font-header: clamp(2.6rem, 1.8vw, 4.5rem);
+    }
+
+    .info-row {
+        border-bottom: 3px solid #e8e8e8;
     }
 }
