@@ -9,7 +9,7 @@ channel = "stable-25_05"
 
 [userenv.shared]
 PORT = "5000"
-BUBBLE_API_URL = "https://memorialbosque.com.br/version-test/api/1.1/obj/memoriais"
+BUBBLE_API_URL = "https://memorialbosque.com.br/api/1.1/obj/memoriais"
 BUBBLE_TOKEN = "48535d0082b75e6ad804a8d905329089"
 
 [workflows]
