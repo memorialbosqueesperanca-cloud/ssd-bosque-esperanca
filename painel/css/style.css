@@ -169,13 +169,13 @@ body, html {
 }
 
 /* ==========================================================================
-   8. Telas médias — tablets em paisagem / monitores pequenos (< 900px)
+   8. Telas médias — tablets em paisagem / monitores pequenos (600–900px)
    ========================================================================== */
 
 @media (max-width: 900px) {
     .info-row {
-        /* Remove icon column, mantém foto */
-        grid-template-columns: var(--foto-size) 2fr 1fr 1.2fr 1.2fr 1fr;
+        grid-template-columns: var(--foto-size) 2fr auto auto auto auto;
+        gap: clamp(8px, 1.5vw, 20px);
     }
 
     .info-row__icon {
@@ -184,65 +184,94 @@ body, html {
 }
 
 /* ==========================================================================
-   9. Telas pequenas — celulares e tablets em retrato (< 600px)
+   9. Telas estreitas — celulares e tablets em retrato (< 600px)
+   Prioridade: nome + sala + status sempre visíveis e completos.
+   Horário e destino ficam em linha secundária abaixo.
    ========================================================================== */
 
 @media (max-width: 600px) {
+    /* Cabeçalho empilhado */
     .painel-header {
         flex-direction: column;
         align-items: center;
         text-align: center;
-        gap: 8px;
-        padding: 16px 5%;
+        gap: 6px;
+        padding: 14px 5%;
     }
 
     .painel-header__logo {
-        width: clamp(80px, 35vw, 160px);
+        width: clamp(80px, 35vw, 150px);
     }
 
-    /* Linha vira card empilhado */
+    /*
+     * Card em grid de 2 linhas com áreas nomeadas:
+     * Linha 1 (primária):   foto | nome | sala | status
+     * Linha 2 (secundária): .    | horário | destino | destino
+     */
     .info-row {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: clamp(40px, 11vw, 56px) 1fr auto auto;
+        grid-template-rows: auto auto;
+        grid-template-areas:
+            "foto  nome     sala     status"
+            ".     horario  destino  destino";
         align-items: center;
-        gap: 8px;
-        padding: 14px 5%;
+        column-gap: clamp(8px, 2.5vw, 16px);
+        row-gap: 4px;
+        padding: 12px 5%;
         border-bottom: 2px solid #f0f0f0;
     }
 
-    .info-row__icon {
-        display: none;
-    }
+    .info-row__icon { display: none; }
 
     .info-row__foto-wrapper {
-        width: clamp(44px, 12vw, 60px);
-        height: clamp(44px, 12vw, 60px);
-        flex-shrink: 0;
+        grid-area: foto;
+        width: clamp(40px, 11vw, 56px);
+        height: clamp(40px, 11vw, 56px);
+        align-self: center;
     }
 
-    /* Nome ocupa a largura restante na primeira linha */
-    .info-row .text-default:nth-child(3) {
-        flex: 1 1 0;
-        font-size: clamp(1rem, 4vw, 1.3rem);
-        white-space: normal;
-        font-weight: 700;
+    /* Linha 1 — itens principais, sempre completos */
+    .info-nome {
+        grid-area: nome;
+        font-size: clamp(0.95rem, 3.8vw, 1.2rem) !important;
+        font-weight: 700 !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        line-height: 1.2;
     }
 
-    /* Sala, horário e destino ficam na segunda linha */
-    .info-row .text-default:nth-child(4),
-    .info-row .text-default:nth-child(5),
-    .info-row .text-default:nth-child(6) {
-        flex: 1 1 auto;
-        font-size: clamp(0.85rem, 3.5vw, 1.1rem);
-    }
-
-    /* Status ocupa linha própria à direita */
-    .text-highlight {
-        flex: 1 1 100%;
+    .info-sala {
+        grid-area: sala;
+        font-size: clamp(0.85rem, 3.2vw, 1.05rem) !important;
+        white-space: nowrap;
         text-align: right;
-        font-size: clamp(0.9rem, 3.5vw, 1.1rem);
-        padding-top: 6px;
-        border-top: 1px dashed #e0e0e0;
+    }
+
+    .info-status {
+        grid-area: status;
+        font-size: clamp(0.85rem, 3.2vw, 1.05rem) !important;
+        white-space: nowrap;
+        text-align: right;
+    }
+
+    /* Linha 2 — informações secundárias, fonte menor e muted */
+    .info-horario {
+        grid-area: horario;
+        font-size: clamp(0.75rem, 2.6vw, 0.9rem) !important;
+        color: #888 !important;
+        font-weight: 500 !important;
+        white-space: nowrap;
+    }
+
+    .info-destino {
+        grid-area: destino;
+        font-size: clamp(0.75rem, 2.6vw, 0.9rem) !important;
+        color: #888 !important;
+        font-weight: 500 !important;
+        white-space: nowrap;
+        text-align: right;
     }
 }
 

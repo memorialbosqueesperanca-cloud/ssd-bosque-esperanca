@@ -82,11 +82,11 @@ function renderizar(lista) {
             <div class="info-row__foto-wrapper">
                 <img class="info-row__foto" src="${foto}" onerror="this.src='https://via.placeholder.com/56'">
             </div>
-            <div class="text-default" style="flex:2.5; font-weight:bold;">${nome}</div>
-            <div class="text-default" style="flex:0.8;">Sala ${sala}</div>
-            <div class="text-default" style="flex:1.2;">${horario}</div>
-            <div class="text-default" style="flex:1.5; font-weight:700;">${destinoFinal}</div>
-            <div class="text-highlight" style="flex:1.2; color:${status.cor};">${status.texto}</div>
+            <div class="info-nome text-default">${nome}</div>
+            <div class="info-sala text-default">Sala ${sala}</div>
+            <div class="info-horario text-default">${horario}</div>
+            <div class="info-destino text-default">${destinoFinal}</div>
+            <div class="info-status text-highlight" style="color:${status.cor};">${status.texto}</div>
         `;
         corpo.appendChild(linha);
     });
