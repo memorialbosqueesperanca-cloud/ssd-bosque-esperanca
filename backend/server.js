@@ -43,12 +43,16 @@ app.get('/api/sala/:id', async (req, res) => {
     } catch (e) { res.status(500).json({ erro: e.message }); }
 });
 
-// --- ROTA 2: PAINEL DO HALL (Somente ativos hoje) ---
+// --- ROTA 2: PAINEL DO HALL (Somente ativos hoje, incluindo 30min após encerramento) ---
 app.get('/api/hall', async (req, res) => {
     try {
         const agora = new Date();
+        // Limite inferior: início do dia de hoje
         const inicioDoDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 0, 0, 0).toISOString();
+        // Limite superior para data_inicio: fim do dia
         const fimDoDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59).toISOString();
+        // Limite inferior para data_fim: agora menos 30 minutos (período de "encerrado")
+        const trintaMinAtras = new Date(agora.getTime() - 30 * 60 * 1000).toISOString();
 
         const response = await axios.get(BUBBLE_API_URL, {
             headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` },
@@ -56,16 +60,17 @@ app.get('/api/hall', async (req, res) => {
                 constraints: JSON.stringify([
                     { key: "visivel", constraint_type: "equals", value: true },
                     { key: "data_inicio", constraint_type: "less than", value: fimDoDia },
-                    { key: "data_fim", constraint_type: "greater than", value: inicioDoDia }
+                    { key: "data_fim", constraint_type: "greater than", value: trintaMinAtras }
                 ])
             }
         });
         const lista = response.data.response.results.map(item => ({
             nome: item.falecido_nome,
             sala: item.sala_cerimonia,
-            horario: item.periodo_velorio || null,
             foto: item["Foto falecido"] || null,
-            destino: item["local da sepultura"] || "Consulte a recepção"
+            destino: item["local da sepultura"] || "Consulte a recepção",
+            data_inicio: item.data_inicio || null,
+            data_fim: item.data_fim || null
         }));
         res.json(lista);
     } catch (e) { res.status(500).json({ erro: e.message }); }
