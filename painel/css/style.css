@@ -124,7 +124,8 @@ body, html {
 .info-row__icon {
     width: var(--icon-size);
     height: var(--icon-size);
-    fill: var(--cor-icone);
+    color: var(--cor-icone);
+    flex-shrink: 0;
 }
 
 /* Foto circular */

@@ -77,8 +77,20 @@ function renderizar(lista) {
             ? item.destino
             : 'Cremação';
 
+        const salasEsquerda = ['5', '6', '7', '8'];
+        const salaStr = String(sala).trim().toLowerCase();
+        const setaEsquerda = salasEsquerda.includes(salaStr);
+
+        const svgSeta = setaEsquerda
+            ? `<svg class="info-row__icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 12H4M4 12L10 6M4 12L10 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+               </svg>`
+            : `<svg class="info-row__icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 12H20M20 12L14 6M20 12L14 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+               </svg>`;
+
         linha.innerHTML = `
-            <svg class="info-row__icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8"/></svg>
+            ${svgSeta}
             <div class="info-row__foto-wrapper">
                 <img class="info-row__foto" src="${foto}" onerror="this.src='https://via.placeholder.com/56'">
             </div>
