@@ -2,14 +2,19 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const path = require('path');
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
+const API_PORT = process.env.API_PORT || 3000;
 const BUBBLE_API_URL = process.env.BUBBLE_API_URL;
 const BUBBLE_TOKEN = process.env.BUBBLE_TOKEN;
+
+// Serve static frontend files
+app.use(express.static(path.join(__dirname, '..', 'painel')));
 
 // --- ROTA 1: PORTA DA SALA (Individual) ---
 app.get('/api/sala/:id', async (req, res) => {
@@ -56,4 +61,9 @@ app.get('/api/hall', async (req, res) => {
     } catch (e) { res.status(500).json({ erro: e.message }); }
 });
 
-app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+// Serve index.html for all other routes (SPA fallback)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'painel', 'index.html'));
+});
+
+app.listen(PORT, '0.0.0.0', () => console.log(`Servidor rodando na porta ${PORT}`));
