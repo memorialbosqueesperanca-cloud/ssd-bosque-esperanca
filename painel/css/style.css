@@ -98,7 +98,7 @@ html {
 .info-row {
     display: grid;
     /* Define as colunas para alinhar os ícones, fotos e textos */
-    grid-template-columns: 24px 60px 3fr 1.5fr 2fr 1.5fr;
+    grid-template-columns: 24px 60px 2.5fr 0.8fr 1.2fr 1.5fr 1.2fr;
     align-items: center;
     gap: 20px;
     padding: 15px 5%;

@@ -65,7 +65,7 @@ app.get('/api/hall', async (req, res) => {
             nome: item.falecido_nome,
             sala: item.sala_cerimonia,
             foto: item["Foto falecido"] || null,
-            destino: item["local da sepultura"] || "Consulte a recepção",
+            destino: item["local da sepultura"] || null,
             data_inicio: item.data_inicio || null,
             data_fim: item.data_fim || null
         }));

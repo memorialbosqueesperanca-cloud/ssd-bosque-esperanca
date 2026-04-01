@@ -73,16 +73,20 @@ function renderizar(lista) {
         const horario = formatarHorario(item.data_inicio, item.data_fim);
         const foto = item.foto ? `https:${item.foto}` : 'https://via.placeholder.com/56';
         const status = calcularStatus(item.data_inicio, item.data_fim);
+        const destinoFinal = (item.destino && item.destino.trim() !== '')
+            ? `Quadra: ${item.destino}`
+            : 'Cremação';
 
         linha.innerHTML = `
             <svg class="info-row__icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8"/></svg>
             <div class="info-row__foto-wrapper">
                 <img class="info-row__foto" src="${foto}" onerror="this.src='https://via.placeholder.com/56'">
             </div>
-            <div class="text-default" style="flex:2; font-weight:bold;">${nome}</div>
-            <div class="text-default" style="flex:1;">Sala ${sala}</div>
-            <div class="text-default" style="flex:1.5;">${horario}</div>
-            <div class="text-highlight" style="color:${status.cor};">${status.texto}</div>
+            <div class="text-default" style="flex:2.5; font-weight:bold;">${nome}</div>
+            <div class="text-default" style="flex:0.8;">Sala ${sala}</div>
+            <div class="text-default" style="flex:1.2;">${horario}</div>
+            <div class="text-default" style="flex:1.5; color:#D4AF37; font-weight:700;">${destinoFinal}</div>
+            <div class="text-highlight" style="flex:1.2; color:${status.cor};">${status.texto}</div>
         `;
         corpo.appendChild(linha);
     });
