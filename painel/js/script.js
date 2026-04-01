@@ -18,19 +18,16 @@ function atualizarDataHora() {
 // 2. CALCULA O STATUS COM BASE NO HORÁRIO ATUAL
 function calcularStatus(data_inicio, data_fim) {
     const agora = new Date();
-    const inicio = new Date(data_inicio);
     const fim = new Date(data_fim);
     const trintaMinAntes = new Date(fim.getTime() - 30 * 60 * 1000);
-    const trintaMinDepois = new Date(fim.getTime() + 30 * 60 * 1000);
 
     if (agora < trintaMinAntes) {
         return { texto: 'Em andamento', cor: 'var(--cor-secundaria)' };
     } else if (agora >= trintaMinAntes && agora <= fim) {
         return { texto: 'Encerrando', cor: '#FAA507' };
-    } else if (agora > fim && agora <= trintaMinDepois) {
+    } else {
         return { texto: 'Encerrado', cor: 'var(--cor-texto-principal)' };
     }
-    return null;
 }
 
 // 3. FORMATA HORÁRIO A PARTIR DE data_inicio E data_fim
@@ -59,17 +56,14 @@ function renderizar(lista) {
     const corpo = document.getElementById('painel-corpo');
     if (!corpo) return;
 
-    // Filtra no cliente: só exibe quem ainda está dentro do período (incluindo 30min após)
-    const visiveis = lista.filter(item => calcularStatus(item.data_inicio, item.data_fim) !== null);
-
-    if (visiveis.length === 0) {
+    if (lista.length === 0) {
         corpo.innerHTML = '<div class="info-row"><div class="text-default" style="width:100%; text-align:center;">Nenhuma homenagem agendada para hoje.</div></div>';
         return;
     }
 
     corpo.innerHTML = '';
 
-    visiveis.forEach(item => {
+    lista.forEach(item => {
         const linha = document.createElement('div');
         linha.className = 'info-row';
 

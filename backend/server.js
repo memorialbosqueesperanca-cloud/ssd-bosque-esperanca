@@ -51,16 +51,13 @@ app.get('/api/hall', async (req, res) => {
         const inicioDoDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 0, 0, 0).toISOString();
         // Limite superior para data_inicio: fim do dia
         const fimDoDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59).toISOString();
-        // Limite inferior para data_fim: agora menos 30 minutos (período de "encerrado")
-        const trintaMinAtras = new Date(agora.getTime() - 30 * 60 * 1000).toISOString();
-
         const response = await axios.get(BUBBLE_API_URL, {
             headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` },
             params: {
                 constraints: JSON.stringify([
                     { key: "visivel", constraint_type: "equals", value: true },
                     { key: "data_inicio", constraint_type: "less than", value: fimDoDia },
-                    { key: "data_fim", constraint_type: "greater than", value: trintaMinAtras }
+                    { key: "data_fim", constraint_type: "greater than", value: inicioDoDia }
                 ])
             }
         });
