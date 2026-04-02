@@ -18,11 +18,14 @@ function atualizarDataHora() {
 // 2. CALCULA O STATUS COM BASE NO HORÁRIO ATUAL
 function calcularStatus(data_inicio, data_fim) {
     const agora = new Date();
+    const inicio = new Date(data_inicio);
     const fim = new Date(data_fim);
     const trintaMinAntes = new Date(fim.getTime() - 30 * 60 * 1000);
     const vinteMinDepois = new Date(fim.getTime() + 20 * 60 * 1000);
 
-    if (agora < trintaMinAntes) {
+    if (agora < inicio) {
+        return { texto: 'Previsto', cor: '#FAA507' };
+    } else if (agora < trintaMinAntes) {
         return { texto: 'Em andamento', cor: 'var(--cor-secundaria)' };
     } else if (agora >= trintaMinAntes && agora <= vinteMinDepois) {
         return { texto: 'Encerrando', cor: '#FAA507' };
