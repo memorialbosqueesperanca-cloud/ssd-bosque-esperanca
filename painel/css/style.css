@@ -102,7 +102,34 @@ body, html {
 }
 
 /* ==========================================================================
-   6. Linha de Informação (grid de 7 colunas)
+   6. Títulos das colunas
+   ========================================================================== */
+
+.colunas-header {
+    display: grid;
+    grid-template-columns: var(--icon-size) var(--foto-size) 2.5fr 0.8fr 1.3fr 1.4fr 1.2fr;
+    align-items: center;
+    gap: var(--row-gap);
+    padding: clamp(6px, 0.8vw, 14px) 5%;
+    box-sizing: border-box;
+    background-color: #f5f5f5;
+    border-bottom: 2px solid var(--cor-primaria);
+}
+
+.colunas-header span {
+    font-family: var(--fonte-principal);
+    font-size: clamp(0.7rem, 1.1vw, 1rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cor-primaria);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   7. Linha de Informação (grid de 7 colunas)
    ========================================================================== */
 
 .info-row {
@@ -174,6 +201,15 @@ body, html {
    ========================================================================== */
 
 @media (max-width: 900px) {
+    .colunas-header {
+        grid-template-columns: var(--foto-size) 2fr auto auto auto auto;
+        gap: clamp(8px, 1.5vw, 20px);
+    }
+
+    .colunas-header span:first-child {
+        display: none;
+    }
+
     .info-row {
         grid-template-columns: var(--foto-size) 2fr auto auto auto auto;
         gap: clamp(8px, 1.5vw, 20px);
@@ -191,6 +227,11 @@ body, html {
    ========================================================================== */
 
 @media (max-width: 600px) {
+    /* Cabeçalho de colunas oculto em telas muito estreitas */
+    .colunas-header {
+        display: none;
+    }
+
     /* Cabeçalho empilhado */
     .painel-header {
         flex-direction: column;
