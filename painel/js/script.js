@@ -26,7 +26,7 @@ function calcularStatus(data_inicio, data_fim) {
     if (agora < inicio) {
         return { texto: 'Previsto', cor: '#FAA507' };
     } else if (agora < trintaMinAntes) {
-        return { texto: 'Em andamento', cor: 'var(--cor-secundaria)' };
+        return { texto: 'Em andamento', cor: 'var(--cor-primaria)' };
     } else if (agora >= trintaMinAntes && agora <= vinteMinDepois) {
         return { texto: 'Encerrando', cor: '#FAA507' };
     } else {
