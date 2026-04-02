@@ -69,13 +69,13 @@ function renderizar(lista) {
 
     lista.forEach(item => {
         const linha = document.createElement('div');
-        linha.className = 'info-row';
-
         const nome = item.nome || 'Homenageado';
         const sala = item.sala || '-';
         const horario = formatarHorario(item.data_inicio, item.data_fim);
         const foto = item.foto ? `https:${item.foto}` : 'https://via.placeholder.com/56';
         const status = calcularStatus(item.data_inicio, item.data_fim);
+
+        linha.className = 'info-row' + (status.texto === 'Encerrado' ? ' info-row--encerrado' : '');
         const destinoFinal = (item.destino && item.destino.trim() !== '')
             ? item.destino
             : 'Cremação';

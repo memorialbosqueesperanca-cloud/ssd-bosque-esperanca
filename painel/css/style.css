@@ -143,6 +143,12 @@ body, html {
     transition: background-color 0.3s ease;
 }
 
+.info-row--encerrado {
+    opacity: 0.45;
+    filter: grayscale(1);
+    pointer-events: none;
+}
+
 .info-row:hover {
     background-color: #fafafa;
 }
