@@ -24,7 +24,7 @@ function calcularStatus(data_inicio, data_fim) {
     const vinteMinDepois = new Date(fim.getTime() + 20 * 60 * 1000);
 
     if (agora < inicio) {
-        return { texto: 'Previsto', cor: '#FAA507' };
+        return { texto: 'Previsto', cor: '#3B82F6' };
     } else if (agora < trintaMinAntes) {
         return { texto: 'Em andamento', cor: 'var(--cor-primaria)' };
     } else if (agora >= trintaMinAntes && agora <= vinteMinDepois) {
