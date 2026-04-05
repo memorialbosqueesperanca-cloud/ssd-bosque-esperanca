@@ -77,7 +77,8 @@ function renderizar(lista) {
     lista.forEach(item => {
         const linha = document.createElement('div');
         const nome = item.nome || 'Homenageado';
-        const sala = item.sala || '-';
+        const salaRaw = item.sala || '-';
+        const sala = /^sala\s/i.test(salaRaw) ? salaRaw : `Sala ${salaRaw}`;
         const horario = formatarHorario(item.data_inicio, item.data_fim);
         const foto = item.foto ? `https:${item.foto}` : 'https://via.placeholder.com/56';
         const status = calcularStatus(item.data_inicio, item.data_fim);
@@ -88,8 +89,8 @@ function renderizar(lista) {
             : 'Cremação';
 
         const salasEsquerda = ['5', '6', '7', '8'];
-        const salaStr = String(sala).trim().toLowerCase();
-        const setaEsquerda = salasEsquerda.includes(salaStr);
+        const salaNumero = String(salaRaw).replace(/^sala\s*/i, '').trim();
+        const setaEsquerda = salasEsquerda.includes(salaNumero);
 
         const svgSeta = setaEsquerda
             ? `<svg class="info-row__icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -105,7 +106,7 @@ function renderizar(lista) {
                 <img class="info-row__foto" src="${foto}" onerror="this.src='https://via.placeholder.com/56'">
             </div>
             <div class="info-nome text-default">${nome}</div>
-            <div class="info-sala text-default">Sala ${sala}</div>
+            <div class="info-sala text-default">${sala}</div>
             <div class="info-horario text-default">${horario}</div>
             <div class="info-destino text-default">${destinoFinal}</div>
             <div class="info-status text-highlight" style="color:${status.cor};">${status.texto}</div>
