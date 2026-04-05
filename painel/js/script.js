@@ -71,7 +71,9 @@ function renderizar(lista) {
     lista.sort((a, b) => {
         const sa = calcularStatus(a.data_inicio, a.data_fim).texto;
         const sb = calcularStatus(b.data_inicio, b.data_fim).texto;
-        return (ordemStatus[sa] ?? 99) - (ordemStatus[sb] ?? 99);
+        const diffStatus = (ordemStatus[sa] ?? 99) - (ordemStatus[sb] ?? 99);
+        if (diffStatus !== 0) return diffStatus;
+        return new Date(a.data_inicio) - new Date(b.data_inicio);
     });
 
     lista.forEach(item => {
