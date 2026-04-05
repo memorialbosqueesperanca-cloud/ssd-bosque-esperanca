@@ -67,6 +67,13 @@ function renderizar(lista) {
 
     corpo.innerHTML = '';
 
+    const ordemStatus = { 'Em andamento': 0, 'Encerrando': 1, 'Previsto': 2, 'Encerrado': 3 };
+    lista.sort((a, b) => {
+        const sa = calcularStatus(a.data_inicio, a.data_fim).texto;
+        const sb = calcularStatus(b.data_inicio, b.data_fim).texto;
+        return (ordemStatus[sa] ?? 99) - (ordemStatus[sb] ?? 99);
+    });
+
     lista.forEach(item => {
         const linha = document.createElement('div');
         const nome = item.nome || 'Homenageado';
