@@ -73,7 +73,9 @@ function renderizar(lista) {
         const sb = calcularStatus(b.data_inicio, b.data_fim).texto;
         const diffStatus = (ordemStatus[sa] ?? 99) - (ordemStatus[sb] ?? 99);
         if (diffStatus !== 0) return diffStatus;
-        return new Date(a.data_inicio) - new Date(b.data_inicio);
+        const diffInicio = new Date(a.data_inicio) - new Date(b.data_inicio);
+        if (diffInicio !== 0) return diffInicio;
+        return new Date(a.data_fim) - new Date(b.data_fim);
     });
 
     lista.forEach(item => {
