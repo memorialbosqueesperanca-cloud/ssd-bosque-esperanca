@@ -8,14 +8,12 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Cabeçalho Superior -->
         <header class="painel-header">
             <img src="https://a55c4e00bd65da15c47b354c25624391.cdn.bubble.io/cdn-cgi/image/w=256,h=82,f=auto,dpr=1.25,fit=contain/f1751377738848x350108495660364160/WhatsApp_Image_2025-07-01_at_10.17.57__1_-removebg-preview.png" class="painel-header__logo" alt="Bosque da Esperança">
             <h1 class="painel-header__titulo">--</h1>
             <div class="header-relogio">--:--</div>
         </header>
 
-        <!-- Títulos das Colunas -->
         <div class="colunas-header">
             <span></span>
             <span></span>
@@ -26,8 +24,13 @@
             <span>Status</span>
         </div>
 
-        <!-- Conteúdo Principal -->
         <main class="painel-main" id="painel-corpo"></main>
+    </div>
+
+    <div id="video-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:black; z-index:9999;">
+        <video id="meuVideo" width="100%" height="100%" muted>
+            <source id="meuVideoSource" src="" type="video/mp4">
+        </video>
     </div>
 
     <script src="js/script.js"></script>
