@@ -16,6 +16,25 @@ const BUBBLE_TOKEN = process.env.BUBBLE_TOKEN;
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, '..', 'painel')));
 
+// --- FUNÇÕES AUXILIARES DE FORMATAÇÃO ---
+function formatarData(isoString) {
+    if (!isoString) return "--.--.----";
+    const data = new Date(isoString);
+    // Garante que a data seja lida em UTC para evitar erro de "um dia antes"
+    const dataFormatada = data.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+    return dataFormatada.replace(/\//g, '.');
+}
+
+function formatarHora(isoString) {
+    if (!isoString) return "--:--";
+    const data = new Date(isoString);
+    return data.toLocaleTimeString('pt-BR', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        timeZone: 'America/Sao_Paulo' 
+    });
+}
+
 // --- ROTA 1: PORTA DA SALA (Individual) ---
 app.get('/api/sala/:id', async (req, res) => {
     const salaSolicitada = req.params.id;
@@ -36,7 +55,11 @@ app.get('/api/sala/:id', async (req, res) => {
                 nome: memorial.falecido_nome,
                 destino: memorial["local da sepultura"] || "Consulte a recepção",
                 foto: memorial["Foto falecido"] ? `https:${memorial["Foto falecido"]}` : "https://via.placeholder.com/1080?text=Bosque+da+Esperanca",
-                qrCode: `https://portalmemorial.com.br/memorial/${memorial._id}`
+                qrCode: memorial.qrcode ? `https:${memorial.qrcode}` : null,
+                data_nascimento: formatarData(memorial["data nascimento"]),
+                data_falecimento: formatarData(memorial["data falecimento"]),
+                hora_inicio: formatarHora(memorial.data_inicio),
+                hora_termino: formatarHora(memorial.data_fim)
             });
         }
         res.json({ nome: "Sala disponível", sala: salaSolicitada, foto: "" });
