@@ -126,3 +126,34 @@ document.addEventListener('DOMContentLoaded', () => {
     buscarDados();
     setInterval(buscarDados, 60000);
 });
+
+/* ==========================================================================
+   7. LÓGICA DE VÍDEOS (ALTERNÂNCIA 1:1)
+   ========================================================================== */
+const arquivosVideos = ['videos/video1.mp4', 'videos/video2.mp4']; 
+const tempoExibicaoTabela = 60000; 
+let indiceVideoAtual = 0; 
+
+function dispararCicloConteudo() {
+    const videoTag = document.getElementById('meuVideo');
+    const sourceTag = document.getElementById('meuVideoSource');
+    const overlay = document.getElementById('video-overlay');
+
+    sourceTag.src = arquivosVideos[indiceVideoAtual];
+    videoTag.load(); 
+    overlay.style.display = 'block';
+    
+    videoTag.play().catch((e) => {
+        console.warn("Erro ao reproduzir vídeo:", e);
+        overlay.style.display = 'none';
+        setTimeout(dispararCicloConteudo, tempoExibicaoTabela);
+    });
+
+    videoTag.onended = () => {
+        overlay.style.display = 'none'; 
+        indiceVideoAtual = (indiceVideoAtual === 0) ? 1 : 0;
+        setTimeout(dispararCicloConteudo, tempoExibicaoTabela);
+    };
+}
+
+setTimeout(dispararCicloConteudo, tempoExibicaoTabela);
