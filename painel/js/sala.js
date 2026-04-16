@@ -44,14 +44,15 @@ async function buscarDadosDaSala() {
             if (dados.qrCode) {
                 document.getElementById('qr-memorial').src = dados.qrCode;
             } else {
+                // Fallback caso não tenha QR code no Bubble
                 document.getElementById('qr-memorial').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://memorialbosque.com.br`;
             }
 
-            // 2. QR Code Velório On-line (Coloque o link real aqui depois)
-            const linkVelorio = "https://velorio.memorialbosque.com.br";
+            // 2. QR Code Velório On-line (Link Real da Adiau)
+            const linkVelorio = "https://www.adiau.com.br/embed/?hash=beFS6qSdk8HJKlKV5gqzYh93#!";
             document.getElementById('qr-velorio').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(linkVelorio)}`;
 
-            // 3. QR Code Redes Sociais (Coloque o link do Linktree/Instagram aqui)
+            // 3. QR Code Redes Sociais (Substitua pelo Linktree depois)
             const linkRedes = "https://instagram.com/bosquedaesperanca";
             document.getElementById('qr-redes').src = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(linkRedes)}`;
         }
