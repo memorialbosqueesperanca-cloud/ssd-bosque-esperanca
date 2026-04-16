@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinalização - Sala</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/sala.css">
+</head>
+<body class="sala-body">
+    <div class="faixa-verde topo"></div>
+    
+    <main class="sala-main">
+        <div class="sala-content">
+            
+            <div class="foto-wrapper">
+                <img id="foto" src="https://via.placeholder.com/400" alt="Homenageado">
+            </div>
+            
+            <h1 id="nome" class="nome-homenageado">CARREGANDO...</h1>
+            
+            <div class="datas-vida">
+                <span>★ <span id="data-nasc">--.--.----</span></span>
+                <span class="icon-cruz">🕇</span> 
+                <span><span id="data-falec">--.--.----</span></span>
+            </div>
+            
+            <div class="horarios-velorio">
+                <span class="label">Início:</span> <span id="hora-inicio" class="bold-time">--:--</span>
+                <span class="label margin-left">Término:</span> <span id="hora-termino" class="bold-time">--:--</span>
+            </div>
+            
+            <div class="destino-bloco">
+                <div id="destino-titulo" class="destino-titulo">Sepultamento na Quadra:</div>
+                <div id="destino-local" class="destino-local">--</div>
+            </div>
+            
+            <div class="qrcodes-bloco">
+                <div class="qr-item">
+                    <div class="qr-titulo">Memorial</div>
+                    <img id="qr-memorial" src="" alt="QR Memorial">
+                </div>
+                <div class="qr-item">
+                    <div class="qr-titulo">Velório On-line</div>
+                    <img id="qr-velorio" src="" alt="QR Velório">
+                </div>
+            </div>
+
+            <div class="redes-sociais-bloco">
+                <span class="redes-texto">Escaneie para acessar nossas redes</span>
+                <img id="qr-redes" src="" alt="QR Redes">
+            </div>
+
+        </div>
+    </main>
+
+    <div class="faixa-verde base"></div>
+    
+    <script src="js/sala.js"></script>
+</body>
+</html>
