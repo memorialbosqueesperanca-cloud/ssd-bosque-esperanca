@@ -362,3 +362,9 @@ body, html {
         border-bottom: 3px solid #e8e8e8;
     }
 }
+/* Força a TV a usar a aceleração de hardware para o vídeo */
+#video-overlay, #meuVideo {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
