@@ -157,3 +157,17 @@ function dispararCicloConteudo() {
 }
 
 setTimeout(dispararCicloConteudo, tempoExibicaoTabela);
+// --- FUNÇÃO DE TELA CHEIA (DOUBLE CLICK) ---
+document.addEventListener('dblclick', () => {
+    if (!document.fullscreenElement) {
+        // Se não estiver em tela cheia, entra
+        document.documentElement.requestFullscreen().catch((err) => {
+            console.warn(`Erro ao tentar ativar tela cheia: ${err.message}`);
+        });
+    } else {
+        // Se já estiver em tela cheia, sai
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+});
