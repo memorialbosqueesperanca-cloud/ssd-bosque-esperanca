@@ -1,0 +1,715 @@
+/* ==========================================================================
+   1. Variáveis Globais (Paleta de Cores e Fontes)
+   ========================================================================== */
+
+:root {
+    --cor-primaria: #01813D;
+    --cor-secundaria: #B54708;
+    --cor-icone: #FAA507;
+    --cor-texto-principal: #424543;
+    --cor-fundo: #FFFFFF;
+    --cor-texto-light: #FFFFFF;
+    --fonte-principal: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+    /* Tamanhos responsivos otimizados para LED 640x480 e limitados para telas widescreen */
+    --foto-size: clamp(60px, 8vw, 80px);
+    --icon-size: clamp(24px, 3vw, 32px);
+    --header-padding: clamp(20px, 3vw, 30px);
+    --row-padding-v: clamp(16px, 2vw, 24px);
+    --row-gap: clamp(16px, 2vw, 24px);
+    --font-body: clamp(16px, 2vw, 20px);
+    --font-header: clamp(24px, 3vw, 28px);
+}
+
+/* Ajustes para telas de notebook (768px+) - reduz escala para manter visual do painel */
+@media (min-width: 768px) {
+    :root {
+        --foto-size: clamp(60px, 5vw, 75px);
+        --icon-size: clamp(24px, 2.5vw, 28px);
+        --header-padding: clamp(20px, 2.5vw, 28px);
+        --row-padding-v: clamp(14px, 1.5vw, 20px);
+        --row-gap: clamp(14px, 1.5vw, 20px);
+        --font-body: clamp(16px, 1.8vw, 19px);
+        --font-header: clamp(24px, 2.5vw, 26px);
+    }
+}
+
+/* ==========================================================================
+   2. Estilos Base e Reset
+   ========================================================================== */
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100vh;
+    font-family: var(--fonte-principal);
+    background-color: var(--cor-fundo);
+    overflow-x: hidden;
+}
+
+/* ==========================================================================
+   3. Estrutura Principal do Layout
+   ========================================================================== */
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 100vh;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+/* ==========================================================================
+   4. Cabeçalho
+   ========================================================================== */
+
+.painel-header {
+    width: 100%;
+    background-color: var(--cor-primaria);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--header-padding) 5%;
+    box-sizing: border-box;
+    gap: clamp(20px, 3vw, 40px);
+    min-height: clamp(80px, 10vw, 160px);
+}
+
+.painel-header__logo {
+    width: clamp(200px, 25vw, 350px);
+    height: auto;
+    flex-shrink: 0;
+}
+
+.painel-header__titulo {
+    color: var(--cor-texto-light);
+    font-size: var(--font-header);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    flex: 1;
+    text-align: center;
+    margin: 0;
+}
+
+.header-relogio {
+    color: var(--cor-texto-light);
+    font-size: var(--font-header);
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.painel-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: clamp(10px, 1.2vw, 16px) 5%;
+    background: #f9f3d8;
+    color: #333333;
+    border-bottom: 1px solid #e7d5a0;
+    box-sizing: border-box;
+}
+
+.painel-status--online {
+    background: #e6f7ec;
+    border-color: #b6e1c2;
+    color: #1d3f2c;
+}
+
+.painel-status--offline {
+    background: #fde6e6;
+    border-color: #f1b5b5;
+    color: #6f2727;
+}
+
+.painel-status__texto {
+    font-size: clamp(0.85rem, 1vw, 1rem);
+    line-height: 1.4;
+    flex: 1;
+}
+
+/* ==========================================================================
+   4. Botão de Emergência no Header
+   ========================================================================== */
+
+.botao-emergencia {
+    background: var(--cor-secundaria);
+    color: var(--cor-texto-light);
+    border: none;
+    border-radius: 999px;
+    padding: 0.8rem 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s ease, filter 0.2s ease;
+    font-size: clamp(0.8rem, 1.5vw, 1rem);
+}
+
+.botao-emergencia:hover {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
+}
+
+.botao-emergencia-discreto {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: transparent;
+    color: rgba(66, 69, 67, 0.3); /* Discreto: cor do texto principal com transparência */
+    border: none;
+    padding: 5px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 100;
+}
+
+.botao-emergencia-discreto:hover {
+    color: rgba(66, 69, 67, 0.8);
+}
+
+/* ==========================================================================
+   5. Painel de Emergência Modal
+   ========================================================================== */
+
+.emergencia-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.emergencia-overlay.active {
+    display: flex;
+}
+
+.emergencia-panel {
+    width: min(560px, 100%);
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 1.75rem;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.fechar-emergencia {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: transparent;
+    border: none;
+    font-size: 1.75rem;
+    color: #333333;
+    cursor: pointer;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.fechar-emergencia:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.emergencia-panel h2 {
+    margin: 0 0 0.75rem;
+    font-size: clamp(1.35rem, 2vw, 1.75rem);
+    color: var(--cor-primaria);
+}
+
+.emergencia-panel p {
+    margin: 0 0 1rem;
+    color: #444444;
+    line-height: 1.6;
+}
+
+.emergencia-upload {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.emergencia-upload input[type="file"] {
+    flex: 1 1 280px;
+    border: 1px solid #ccc;
+    border-radius: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    background: #fafafa;
+    font-size: 0.9rem;
+}
+
+.form-emergencia {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+    color: #333333;
+}
+
+.form-group input {
+    width: 100%;
+    border: 1px solid #cacaca;
+    border-radius: 0.75rem;
+    padding: 0.85rem 0.9rem;
+    font-size: 0.95rem;
+    background: #ffffff;
+    color: #333333;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input:focus {
+    outline: 2px solid rgba(1, 129, 61, 0.2);
+    border-color: var(--cor-primaria);
+}
+
+.emergencia-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.emergencia-actions button {
+    flex: 1 1 220px;
+    background: var(--cor-primaria);
+    color: var(--cor-texto-light);
+    border: none;
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.emergencia-actions button:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+}
+
+.emergencia-info p {
+    margin: 0.5rem 0;
+    color: #333333;
+    line-height: 1.5;
+    font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   5. Conteúdo Principal
+   ========================================================================== */
+
+.painel-main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(10px, 1.5vw, 30px) 0;
+    box-sizing: border-box;
+    overflow-y: hidden;
+}
+
+/* ==========================================================================
+   6. Títulos das colunas
+   ========================================================================== */
+
+.colunas-header {
+    display: grid;
+    grid-template-columns: var(--icon-size) var(--foto-size) 2.5fr 0.8fr 1.3fr 1.4fr 1.2fr;
+    align-items: center;
+    gap: var(--row-gap);
+    padding: clamp(6px, 0.8vw, 14px) 5%;
+    box-sizing: border-box;
+    background-color: #f5f5f5;
+    border-bottom: 2px solid var(--cor-primaria);
+}
+
+.colunas-header span {
+    font-family: var(--fonte-principal);
+    font-size: clamp(0.7rem, 1.1vw, 1rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cor-primaria);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   7. Linha de Informação (grid de 7 colunas)
+   ========================================================================== */
+
+.info-row {
+    display: grid;
+    grid-template-columns: var(--icon-size) var(--foto-size) 2.5fr 0.8fr 1.3fr 1.4fr 1.2fr;
+    align-items: center;
+    gap: var(--row-gap);
+    padding: var(--row-padding-v) 5%;
+    box-sizing: border-box;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.3s ease;
+}
+
+.info-row--encerrado {
+    opacity: 0.45;
+    filter: grayscale(1);
+    pointer-events: none;
+}
+
+.info-row:hover {
+    background-color: #fafafa;
+}
+
+.info-row__icon {
+    color: var(--cor-icone);
+    width: 100%;
+    height: 100%;
+}
+
+/* ==========================================================================
+   5. Modal de Edição de Emergência
+   ========================================================================== */
+
+.emergencia-edit-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 10001;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.emergencia-edit-overlay.active {
+    display: flex;
+}
+
+.emergencia-edit-panel {
+    width: min(500px, 95%);
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
+    position: relative;
+}
+
+.emergencia-edit-panel h3 {
+    margin: 0 0 1rem 0;
+    color: var(--cor-texto-principal);
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.emergencia-edit-form {
+    display: grid;
+    gap: 1rem;
+}
+
+.emergencia-edit-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.emergencia-edit-form label {
+    font-weight: 500;
+    color: var(--cor-texto-principal);
+    font-size: 0.9rem;
+}
+
+.emergencia-edit-form input {
+    padding: 0.75rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.emergencia-edit-form input:focus {
+    outline: none;
+    border-color: var(--cor-secundaria);
+}
+
+.emergencia-edit-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    justify-content: space-between;
+}
+
+.emergencia-edit-actions button {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.emergencia-edit-actions .btn-salvar {
+    background: var(--cor-secundaria);
+    color: white;
+}
+
+.emergencia-edit-actions .btn-salvar:hover {
+    background: #a33a06;
+    transform: translateY(-1px);
+}
+
+.emergencia-edit-actions .btn-excluir {
+    background: #dc3545;
+    color: white;
+}
+
+.emergencia-edit-actions .btn-excluir:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+}
+
+.emergencia-edit-actions .btn-cancelar {
+    background: #6c757d;
+    color: white;
+}
+
+.emergencia-edit-actions .btn-cancelar:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   6. Painel de Emergência Modal
+   ========================================================================== */
+.info-row__foto-wrapper {
+    width: var(--foto-size);
+    height: var(--foto-size);
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e8e8e8;
+    flex-shrink: 0;
+}
+
+.info-row__foto {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 15%;
+}
+
+/* ==========================================================================
+   7. Tipografia
+   ========================================================================== */
+
+.text-default {
+    color: var(--cor-texto-principal);
+    font-size: var(--font-body);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.text-highlight {
+    color: var(--cor-secundaria);
+    font-size: var(--font-body);
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   8. Telas médias — tablets em paisagem / monitores pequenos
+   ========================================================================== */
+
+@media (max-width: 1100px) {
+    .colunas-header {
+        grid-template-columns: var(--foto-size) 2fr auto auto auto auto;
+        gap: clamp(8px, 1.5vw, 20px);
+    }
+
+    .colunas-header span:first-child {
+        display: none;
+    }
+
+    .info-row {
+        grid-template-columns: var(--foto-size) 2fr auto auto auto auto;
+        gap: clamp(8px, 1.5vw, 20px);
+    }
+
+    .info-row__icon {
+        display: none;
+    }
+}
+
+/* ==========================================================================
+   9. Telas estreitas e modo retrato — celulares e tablets em retrato (< 600px) e TVs Verticais
+   Prioridade: nome + sala + status sempre visíveis e completos.
+   Horário e destino ficam em linha secundária abaixo.
+   ========================================================================== */
+
+@media (max-width: 600px), (orientation: portrait) {
+    /* Cabeçalho de colunas oculto em telas muito estreitas */
+    .colunas-header {
+        display: none;
+    }
+
+    /* Cabeçalho empilhado */
+    .painel-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 6px;
+        padding: 14px 5%;
+    }
+
+    .painel-header__logo {
+        width: clamp(80px, 35vw, 150px);
+    }
+
+    /*
+     * Card em grid de 2 linhas com áreas nomeadas:
+     * Linha 1 (primária):   foto | nome | sala | status
+     * Linha 2 (secundária): .    | horário | destino | destino
+     */
+    .info-row {
+        display: grid;
+        grid-template-columns: clamp(40px, 11vw, 56px) 1fr auto auto;
+        grid-template-rows: auto auto;
+        grid-template-areas:
+            "foto  nome     sala     status"
+            ".     horario  destino  destino";
+        align-items: center;
+        column-gap: clamp(8px, 2.5vw, 16px);
+        row-gap: 4px;
+        padding: 12px 5%;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .info-row__icon { display: none; }
+
+    .info-row__foto-wrapper {
+        grid-area: foto;
+        width: clamp(40px, 11vw, 56px);
+        height: clamp(40px, 11vw, 56px);
+        align-self: center;
+    }
+
+    /* Linha 1 — itens principais, sempre completos */
+    .info-nome {
+        grid-area: nome;
+        font-size: clamp(0.95rem, 3.8vw, 1.2rem) !important;
+        font-weight: 700 !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        line-height: 1.2;
+    }
+
+    .info-sala {
+        grid-area: sala;
+        font-size: clamp(0.85rem, 3.2vw, 1.05rem) !important;
+        white-space: nowrap;
+        text-align: right;
+    }
+
+    .info-status {
+        grid-area: status;
+        font-size: clamp(0.85rem, 3.2vw, 1.05rem) !important;
+        white-space: nowrap;
+        text-align: right;
+    }
+
+    /* Linha 2 — informações secundárias, fonte menor e muted */
+    .info-horario {
+        grid-area: horario;
+        font-size: clamp(0.75rem, 2.6vw, 0.9rem) !important;
+        color: #888 !important;
+        font-weight: 500 !important;
+        white-space: nowrap;
+    }
+
+    .info-destino {
+        grid-area: destino;
+        font-size: clamp(0.75rem, 2.6vw, 0.9rem) !important;
+        color: #888 !important;
+        font-weight: 500 !important;
+        white-space: nowrap;
+        text-align: right;
+    }
+}
+
+/* ==========================================================================
+   10. Telas grandes — TVs Full HD e acima (>= 1920px)
+   ========================================================================== */
+
+@media (min-width: 1920px) {
+    :root {
+        --foto-size: clamp(80px, 5vw, 120px);
+        --icon-size: clamp(28px, 2vw, 44px);
+        --header-padding: clamp(24px, 2.5vw, 50px);
+        --row-padding-v: clamp(22px, 2vw, 50px);
+        --row-gap: clamp(24px, 2vw, 50px);
+        --font-body: clamp(1.4rem, 1.5vw, 2.2rem);
+        --font-header: clamp(1.8rem, 2vw, 3.4rem);
+    }
+
+    .info-row {
+        border-bottom: 2px solid #ebebeb;
+    }
+}
+
+/* ==========================================================================
+   11. Telas muito grandes — TVs 4K e painéis (>= 3200px)
+   ========================================================================== */
+
+@media (min-width: 3200px) {
+    :root {
+        --foto-size: clamp(120px, 4.5vw, 180px);
+        --icon-size: clamp(40px, 1.8vw, 64px);
+        --header-padding: clamp(36px, 2vw, 70px);
+        --row-padding-v: clamp(32px, 1.8vw, 70px);
+        --row-gap: clamp(36px, 1.8vw, 72px);
+        --font-body: clamp(2rem, 1.4vw, 3rem);
+        --font-header: clamp(2.6rem, 1.8vw, 4.5rem);
+    }
+
+    .info-row {
+        border-bottom: 3px solid #e8e8e8;
+    }
+}
+/* Força a TV a usar a aceleração de hardware para o vídeo */
+#video-overlay, #meuVideo {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}

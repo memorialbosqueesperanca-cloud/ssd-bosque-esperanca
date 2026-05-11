@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Sinalização Digital</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="painel-header">
+            <img src="https://a55c4e00bd65da15c47b354c25624391.cdn.bubble.io/cdn-cgi/image/w=256,h=82,f=auto,dpr=1.25,fit=contain/f1751377738848x350108495660364160/WhatsApp_Image_2025-07-01_at_10.17.57__1_-removebg-preview.png" class="painel-header__logo" alt="Bosque da Esperança">
+            <h1 class="painel-header__titulo">--</h1>
+            <div class="header-relogio">--:--</div>
+        </header>
+
+        <div class="colunas-header">
+            <span></span>
+            <span></span>
+            <span>Nome</span>
+            <span>Sala</span>
+            <span>Horário</span>
+            <span>Quadra</span>
+            <span>Status</span>
+        </div>
+
+        <main class="painel-main" id="painel-corpo"></main>
+        
+        <!-- Botão de emergência discreto na parte inferior -->
+        <button id="btn-emergencia" class="botao-emergencia-discreto" type="button" title="Painel de Emergência" aria-label="Abrir painel de emergência">
+            entrada manual
+        </button>
+    </div>
+
+    <div id="video-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:black; z-index:9999;">
+        <video id="meuVideo" style="width: 100%; height: 100%; object-fit: cover;" muted>
+            <source id="meuVideoSource" src="" type="video/mp4">
+        </video>
+    </div>
+
+    <!-- Painel de Emergência -->
+    <div class="emergencia-overlay" id="emergencia-overlay">
+        <div class="emergencia-panel">
+            <button id="fechar-emergencia" class="fechar-emergencia" type="button" aria-label="Fechar painel de emergência">×</button>
+            <h2>Entrada de emergência</h2>
+            <p>Importe dados via CSV/Excel ou cadastre manualmente. Esses registros são mantidos apenas localmente no painel do hall.</p>
+            
+            <div class="emergencia-upload">
+                <input id="arquivo-excel" type="file" accept=".csv,.xlsx" aria-label="Arquivo de emergência Excel ou CSV">
+                <button id="btn-importar-arquivo" type="button">Importar arquivo</button>
+            </div>
+            
+            <form id="form-emergencia" class="form-emergencia">
+                <div class="form-grid">
+                    <label class="form-group">
+                        <span>Nome</span>
+                        <input id="emergencia-nome" type="text" placeholder="Nome do homenageado">
+                    </label>
+                    <label class="form-group">
+                        <span>Sala</span>
+                        <input id="emergencia-sala" type="text" placeholder="Número ou nome da sala">
+                    </label>
+                    <label class="form-group">
+                        <span>Início</span>
+                        <input id="emergencia-inicio" type="datetime-local">
+                    </label>
+                    <label class="form-group">
+                        <span>Término</span>
+                        <input id="emergencia-fim" type="datetime-local">
+                    </label>
+                    <label class="form-group">
+                        <span>Destino / Quadra</span>
+                        <input id="emergencia-destino" type="text" placeholder="Ex.: Quadra 5">
+                    </label>
+                    <label class="form-group">
+                        <span>Foto (upload JPG/JPEG/PNG)</span>
+                        <input id="emergencia-foto-upload" type="file" accept=".jpg,.jpeg,.png" aria-label="Upload de foto">
+                    </label>
+                </div>
+                <div class="emergencia-actions">
+                    <button id="btn-adicionar-manual" type="button">Adicionar manualmente</button>
+                    <button id="btn-limpar-emergencia" type="button">Limpar entradas de emergência</button>
+                </div>
+            </form>
+            
+            <div class="emergencia-info">
+                <p>Última atualização local: <strong id="cache-timestamp">-</strong></p>
+                <p>Status da conexão: <strong id="conexao-status">Desconhecido</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edição de Emergência -->
+    <div class="emergencia-edit-overlay" id="emergencia-edit-overlay">
+        <div class="emergencia-edit-panel">
+            <h3>Editar entrada de emergência</h3>
+            <form class="emergencia-edit-form" id="emergencia-edit-form">
+                <div class="form-group">
+                    <label for="edit-nome">Nome do homenageado</label>
+                    <input type="text" id="edit-nome" placeholder="Nome do homenageado" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-sala">Sala</label>
+                    <input type="text" id="edit-sala" placeholder="Número ou nome da sala" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-inicio">Data e hora de início</label>
+                    <input type="datetime-local" id="edit-inicio" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-fim">Data e hora de fim</label>
+                    <input type="datetime-local" id="edit-fim" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-destino">Destino / Quadra</label>
+                    <input type="text" id="edit-destino" placeholder="Ex.: Quadra 5">
+                </div>
+                <div class="emergencia-edit-actions">
+                    <button type="button" class="btn-cancelar" id="btn-edit-cancelar">Cancelar</button>
+                    <button type="button" class="btn-excluir" id="btn-edit-excluir">Excluir</button>
+                    <button type="submit" class="btn-salvar" id="btn-edit-salvar">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

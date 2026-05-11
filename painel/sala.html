@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Sala - Bosque da Esperança</title>
+    <link rel="stylesheet" href="css/sala.css">
+</head>
+<body class="sala-body">
+
+    <div class="faixa-verde"></div>
+    <div class="sala-main">
+
+        <div class="sala-content">
+            <div class="foto-wrapper">
+                <img id="foto" src="TV - 1.png" alt="Homenageado" onerror="this.src='videos/logo_bosque.png'">
+            </div>
+            
+            <h1 id="nome" class="nome-homenageado">SALA EM PREPARAÇÃO</h1>
+            
+            <div class="datas-vida">
+                <div class="data-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#01813D" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2L9.19 8.63L2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    <span id="data-nasc">--.--.----</span>
+                </div>
+                <span class="separador">|</span>
+                <div class="data-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#01813D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 21h4v-9h5v-4h-5v-5h-4v5h-5v4h5z"/></svg>
+                    <span id="data-falec">--.--.----</span>
+                </div>
+            </div>
+
+            <div class="horarios-velorio">
+                <span class="label">Início:</span> <span id="hora-inicio" class="bold-time">--:--</span>
+                <span class="label margin-left">Término:</span> <span id="hora-termino" class="bold-time">--:--</span>
+            </div>
+
+            <div class="destino-bloco">
+                <span class="destino-titulo">Local:</span>
+                <span id="destino-local" class="destino-local">--</span>
+            </div>
+
+            <div class="qrcodes-bloco">
+                <div class="qr-item">
+                    <span class="qr-titulo">Memorial</span>
+                    <img id="qr-memorial" src="" alt="QR Memorial">
+                </div>
+                <div class="qr-item">
+                    <span class="qr-titulo">Velório On-line</span>
+                    <img id="qr-velorio" src="" alt="Transmissão">
+                </div>
+            </div>
+
+            <div class="redes-sociais-bloco">
+                <span class="redes-texto">Escaneie para acessar nossas redes</span>
+                <img id="qr-redes" src="" alt="QR Bosque">
+            </div>
+        </div>
+
+    </div>
+    <div class="faixa-verde"></div>
+
+    <script src="js/sala.js"></script>
+</body>
+</html>

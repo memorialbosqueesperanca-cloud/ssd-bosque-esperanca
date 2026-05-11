@@ -1,0 +1,264 @@
+:root {
+    --sala-foto-max: 380px;
+    --sala-nome-max: 44px;
+    --sala-qr-max: 200px;
+}
+
+/* Ajustes para telas de notebook - mantém proporções menores */
+@media (min-width: 768px) {
+    :root {
+        --sala-foto-max: 320px;
+        --sala-nome-max: 38px;
+        --sala-qr-max: 180px;
+    }
+}
+
+/* Ajustes para telas grandes 32" */
+@media (min-height: 1080px) and (orientation: portrait) {
+    :root {
+        --sala-foto-max: 380px;
+        --sala-nome-max: 44px;
+        --sala-qr-max: 200px;
+    }
+}
+
+.sala-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background-color: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    position: relative;
+}
+
+/* Camada de Papel de Parede - Usando a imagem inteira já pronta do Figma */
+.sala-body::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    
+    /* Coloque aqui o nome do arquivo da imagem grande que você subiu */
+    background-image: url('../fundo-pronto.png'); 
+    
+    /* Faz a imagem cobrir a tela inteira perfeitamente */
+    background-size: 96%; 
+    background-position: center; 
+    background-repeat: repeat; 
+    
+    /* Deixa a marca d'água suave para não atrapalhar a leitura (ajuste se quiser) */
+    opacity: 1.0; 
+    z-index: 0; 
+}
+
+/* Garante que o conteúdo (foto, nomes) fique acima do fundo */
+.faixa-verde, .sala-main {
+    position: relative;
+    z-index: 1; 
+}
+
+.faixa-verde {
+    height: 3vh;
+    min-height: 15px;
+    background-color: #01813D;
+    width: 100%;
+}
+
+.sala-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: clamp(16px, 3vh, 48px) 3vw;
+    width: min(100%, 720px);
+    margin: 0 auto;
+    min-height: auto;
+}
+
+/* Responsividade em modo paisagem */
+@media (orientation: landscape) {
+    .sala-main {
+        width: min(100%, 90vw);
+        padding: clamp(12px, 2vh, 24px) 3vw;
+    }
+}
+
+#container-hall-sala {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+}
+
+/* Status Dinâmico */
+#status-texto {
+    font-size: clamp(20px, 3vw, 28px);
+    font-weight: 800;
+    margin: 10px 0;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.sala-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: auto;
+    height: auto;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: clamp(12px, 2vh, 24px);
+}
+
+/* Moldura da Foto */
+.foto-wrapper {
+    width: clamp(240px, 28vw, var(--sala-foto-max));
+    height: clamp(240px, 28vw, var(--sala-foto-max));
+    border-radius: 50%;
+    overflow: hidden;
+    margin-bottom: 12px;
+    border: 4px solid #01813D;
+    background-color: #eee;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.foto-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 15%;
+}
+
+/* Tipografia Verde Institucional */
+.nome-homenageado {
+    color: #01813D;
+    font-size: clamp(28px, 3.5vw, var(--sala-nome-max));
+    font-weight: 800;
+    text-transform: uppercase;
+    margin: 0;
+    line-height: 1.05;
+}
+
+.datas-vida {
+    color: #01813D;
+    font-size: clamp(16px, 2vw, 20px);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+.data-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.data-item svg {
+    width: clamp(32px, 4vw, 40px);
+    height: clamp(32px, 4vw, 40px);
+}
+
+.horarios-velorio {
+    color: #01813D;
+    font-size: clamp(16px, 2vw, 18px);
+}
+
+.horarios-velorio .label { font-weight: 700; }
+.horarios-velorio .bold-time { font-weight: 800; }
+.horarios-velorio .margin-left { margin-left: 25px; }
+
+/* Bloco de Destino */
+.destino-bloco {
+    margin: 1vh 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.destino-titulo {
+    color: #01813D;
+    font-weight: 700;
+    font-size: clamp(18px, 2.5vw, 22px);
+}
+
+.destino-local {
+    color: #01813D;
+    font-weight: 800;
+    font-size: clamp(20px, 3vw, 26px);
+}
+
+/* Organização dos QR Codes */
+.qrcodes-bloco {
+    display: flex;
+    gap: clamp(40px, 6vw, 80px);
+    margin: 10px 0;
+    justify-content: center;
+}
+
+.qr-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.qr-titulo {
+    color: #01813D;
+    font-size: clamp(14px, 2vw, 18px);
+    font-weight: 800;
+}
+
+.qr-item img {
+    width: clamp(140px, 14vw, var(--sala-qr-max));
+    height: clamp(140px, 14vw, var(--sala-qr-max));
+    background-color: white;
+    padding: 8px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+}
+
+/* Prioriza modo retrato */
+@media (orientation: landscape) {
+    .sala-main {
+        max-width: 480px;
+        margin: 0 auto;
+    }
+}
+
+.redes-sociais-bloco {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.redes-texto {
+    color: #01813D;
+    font-size: clamp(1rem, 2.8vmin, 2.2rem);
+    font-weight: 600;
+}
+
+.redes-sociais-bloco img {
+    width: clamp(60px, 10vmin, 100px);
+    height: clamp(60px, 10vmin, 100px);
+    background-color: white;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+/* Ajustes Mobile */
+@media (max-width: 600px) {
+    .qrcodes-bloco { gap: 15px; }
+    .horarios-velorio .margin-left { margin-left: 10px; }
+    .datas-vida { gap: 10px; }
+}

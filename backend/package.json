@@ -1,0 +1,20 @@
+{
+  "name": "ssd-backend",
+  "version": "1.0.0",
+  "description": "Backend integrador para o Sistema de Sinalização Digital - Bosque da Esperança",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "start:prod": "pm2 start server.js --name ssd-backend --time",
+    "stop:prod": "pm2 stop ssd-backend"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
+  },
+  "author": "Luiza Peixoto TI",
+  "license": "ISC"
+}
