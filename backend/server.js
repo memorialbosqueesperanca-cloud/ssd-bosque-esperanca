@@ -1,7 +1,9 @@
+const fs = require('fs');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const express = require('express');
 const cors = require('cors');
+const multer = require('multer');
 const axios = require('axios');
 const app = express();
 
@@ -17,6 +19,51 @@ const IVERTEX_API_URL = process.env.IVERTEX_API_URL;
 const IVERTEX_TOKEN = process.env.IVERTEX_TOKEN;
 
 app.use(express.static(path.join(__dirname, '..', 'painel')));
+
+const VIDEO_CONFIG_PATH = path.join(__dirname, '..', 'painel', 'video-config.json');
+const VIDEO_UPLOAD_DIR = path.join(__dirname, '..', 'painel', 'videos');
+const DEFAULT_VIDEOS_HALL = ['videos/video1.mp4', 'videos/video2.mp4'];
+const DEFAULT_VIDEOS_SALA = ['videos/video-sala1.mp4', 'videos/video-sala2.mp4'];
+
+fs.mkdirSync(VIDEO_UPLOAD_DIR, { recursive: true });
+
+const storage = multer.diskStorage({
+    destination: VIDEO_UPLOAD_DIR,
+    filename: (req, file, cb) => {
+        const safeName = file.originalname
+            .replace(/\s+/g, '_')
+            .replace(/[^a-zA-Z0-9_.-]/g, '');
+        cb(null, `${Date.now()}-${safeName}`);
+    }
+});
+
+const upload = multer({
+    storage,
+    limits: {
+        fileSize: 500 * 1024 * 1024 // 500MB
+    }
+});
+
+function lerConfiguracaoVideos() {
+    try {
+        if (!fs.existsSync(VIDEO_CONFIG_PATH)) {
+            return { hall: DEFAULT_VIDEOS_HALL, sala: DEFAULT_VIDEOS_SALA };
+        }
+        const raw = fs.readFileSync(VIDEO_CONFIG_PATH, 'utf8');
+        const parsed = JSON.parse(raw);
+        return {
+            hall: Array.isArray(parsed.hall) && parsed.hall.length > 0 ? parsed.hall : DEFAULT_VIDEOS_HALL,
+            sala: Array.isArray(parsed.sala) && parsed.sala.length > 0 ? parsed.sala : DEFAULT_VIDEOS_SALA
+        };
+    } catch (err) {
+        console.warn('Erro ao ler config de vídeo:', err.message);
+        return { hall: DEFAULT_VIDEOS_HALL, sala: DEFAULT_VIDEOS_SALA };
+    }
+}
+
+function salvarConfiguracaoVideos(config) {
+    fs.writeFileSync(VIDEO_CONFIG_PATH, JSON.stringify(config, null, 2), 'utf8');
+}
 
 function formatarData(isoString) {
     if (!isoString) return "--.--.----";
@@ -123,6 +170,45 @@ app.get('/api/sala/:id', async (req, res) => {
     } catch (e) {
         console.error("Erro na rota da sala:", e.message);
         res.status(500).json({ erro: e.message });
+    }
+});
+
+app.get('/api/video-config', (req, res) => {
+    const config = lerConfiguracaoVideos();
+    res.json(config);
+});
+
+app.post('/api/video-config', (req, res) => {
+    try {
+        const { hall, sala } = req.body || {};
+        if (!Array.isArray(hall) || !Array.isArray(sala)) {
+            return res.status(400).json({ erro: 'Payload inválido. Esperado hall e sala como arrays.' });
+        }
+
+        const config = {
+            hall: hall.map(item => String(item).trim()).filter(Boolean),
+            sala: sala.map(item => String(item).trim()).filter(Boolean)
+        };
+
+        salvarConfiguracaoVideos(config);
+        res.json({ success: true, config });
+    } catch (err) {
+        console.error('Erro ao salvar config de vídeos:', err.message);
+        res.status(500).json({ erro: 'Não foi possível salvar a configuração de vídeos.' });
+    }
+});
+
+app.post('/api/video-upload', upload.single('videoFile'), (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ erro: 'Nenhum arquivo enviado.' });
+        }
+
+        const filePath = `videos/${req.file.filename}`;
+        res.json({ success: true, path: filePath });
+    } catch (err) {
+        console.error('Erro no upload de vídeo:', err.message);
+        res.status(500).json({ erro: 'Falha ao fazer upload do vídeo.' });
     }
 });
 

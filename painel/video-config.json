@@ -1,0 +1,10 @@
+{
+  "hall": [
+    "videos/video1.mp4",
+    "videos/video2.mp4"
+  ],
+  "sala": [
+    "videos/video-sala1.mp4",
+    "videos/video-sala2.mp4"
+  ]
+}

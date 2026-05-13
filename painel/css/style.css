@@ -73,13 +73,15 @@ body, html {
     justify-content: space-between;
     padding: var(--header-padding) 5%;
     box-sizing: border-box;
-    gap: clamp(20px, 3vw, 40px);
     min-height: clamp(80px, 10vw, 160px);
+    position: relative; /* Container para centralização exata da data */
 }
 
 .painel-header__logo {
-    width: clamp(200px, 25vw, 350px);
+    width: clamp(120px, 14vw, 220px); /* Reduzido para ficar proporcional aos textos */
     height: auto;
+    max-height: clamp(40px, 5vw, 65px); /* Trava a altura para não sobressair */
+    object-fit: contain;
     flex-shrink: 0;
 }
 
@@ -89,14 +91,17 @@ body, html {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    flex: 1;
     text-align: center;
     margin: 0;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap; /* Evita quebra de linha indesejada */
 }
 
 .header-relogio {
     color: var(--cor-texto-light);
-    font-size: var(--font-header);
+    font-size: calc(var(--font-header) * 1.2);
     font-weight: 700;
     white-space: nowrap;
     flex-shrink: 0;
@@ -590,10 +595,18 @@ body, html {
         text-align: center;
         gap: 6px;
         padding: 14px 5%;
+        position: static;
     }
 
     .painel-header__logo {
-        width: clamp(80px, 35vw, 150px);
+        width: clamp(80px, 25vw, 130px);
+        max-height: 50px;
+    }
+
+    .painel-header__titulo {
+        position: static;
+        transform: none;
+        white-space: normal;
     }
 
     /*

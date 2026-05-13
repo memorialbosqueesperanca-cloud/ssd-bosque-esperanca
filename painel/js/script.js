@@ -48,17 +48,20 @@ function formatarHorario(data_inicio, data_fim) {
 // 4. BUSCA NO BACKEND (CONECTADO AO SEU SERVER.JS)
 async function buscarDados() {
     try {
-        const response = await fetch('http://localhost:5001/api/hall');
+        const response = await fetch('/api/hall');
         if (!response.ok) throw new Error('Erro ao buscar dados');
         const memoriais = await response.json();
-        
-        // Mesclar com dados de emergência
+        salvarCacheDadosAPI(memoriais);
         const dadosCompletos = mesclarEmergencia(memoriais);
         renderizar(dadosCompletos);
     } catch (err) {
         console.error("Erro ao carregar dados do Hall:", err);
-        // Em caso de erro, mostrar apenas dados de emergência
-        renderizar(mesclarEmergencia([]));
+        const memoriaisCache = carregarCacheDadosAPI();
+        if (memoriaisCache.length > 0) {
+            renderizar(mesclarEmergencia(memoriaisCache));
+        } else {
+            renderizar(mesclarEmergencia([]));
+        }
     }
 }
 
@@ -147,16 +150,16 @@ function renderizar(lista) {
     });
 
     // Ajuste dinâmico para caber todos os itens na tela sem rolar
-    corpo.style.zoom = '1';
+    corpo.style.transform = 'none';
+    corpo.style.transformOrigin = 'top center';
     setTimeout(() => {
         const scrollHeight = corpo.scrollHeight;
-        const clientHeight = corpo.clientHeight;
+        const maxHeight = corpo.parentElement ? corpo.parentElement.clientHeight : window.innerHeight * 0.8;
         
-        if (scrollHeight > clientHeight && clientHeight > 0) {
-            // Calcula o fator de escala para caber no espaço disponível
-            const scale = clientHeight / scrollHeight;
-            // Aplica o zoom (multiplicado por 0.98 para dar uma margem de respiro)
-            corpo.style.zoom = scale * 0.98;
+        if (scrollHeight > maxHeight && maxHeight > 0) {
+            const scale = maxHeight / scrollHeight;
+            corpo.style.transform = `scale(${scale * 0.96})`;
+            corpo.style.marginBottom = `-${scrollHeight * (1 - scale)}px`;
         }
     }, 50);
 }
@@ -165,23 +168,81 @@ function renderizar(lista) {
 const urlParamsHall = new URLSearchParams(window.location.search);
 const isModoSala = urlParamsHall.get('modo') === 'sala';
 
-const arquivosVideos = isModoSala ? ['videos/video-sala1.mp4', 'videos/video-sala2.mp4'] : ['videos/video1.mp4', 'videos/video2.mp4']; 
+const VIDEO_CONFIG_URL = '/api/video-config';
+const DEFAULT_VIDEOS_HALL = ['videos/video1.mp4', 'videos/video2.mp4'];
+const DEFAULT_VIDEOS_SALA = ['videos/video-sala1.mp4', 'videos/video-sala2.mp4'];
+const CACHE_VIDEO_KEY = 'painel_video_cache';
+
+async function carregarConfiguracaoVideosServidor() {
+    try {
+        const response = await fetch(VIDEO_CONFIG_URL);
+        if (!response.ok) throw new Error('Falha ao carregar configuração de vídeo');
+        const config = await response.json();
+        
+        // Salva com sucesso para o cache offline
+        localStorage.setItem(CACHE_VIDEO_KEY, JSON.stringify(config));
+        
+        return {
+            hall: Array.isArray(config.hall) && config.hall.length > 0 ? config.hall : DEFAULT_VIDEOS_HALL,
+            sala: Array.isArray(config.sala) && config.sala.length > 0 ? config.sala : DEFAULT_VIDEOS_SALA
+        };
+    } catch (err) {
+        console.warn('Falha ao carregar configuração de vídeos do servidor. Tentando cache...', err);
+        const cacheRaw = localStorage.getItem(CACHE_VIDEO_KEY);
+        if (cacheRaw) {
+            try {
+                const config = JSON.parse(cacheRaw);
+                return {
+                    hall: Array.isArray(config.hall) && config.hall.length > 0 ? config.hall : DEFAULT_VIDEOS_HALL,
+                    sala: Array.isArray(config.sala) && config.sala.length > 0 ? config.sala : DEFAULT_VIDEOS_SALA
+                };
+            } catch (e) {}
+        }
+        return { hall: DEFAULT_VIDEOS_HALL, sala: DEFAULT_VIDEOS_SALA };
+    }
+}
+
+let arquivosVideos = isModoSala ? DEFAULT_VIDEOS_SALA : DEFAULT_VIDEOS_HALL;
 const tempoExibicaoTabela = 60000; // 1 minuto
 let indiceVideoAtual = 0;
 
-function alternarConteudo() {
+async function aplicarConfiguracaoVideos() {
+    const config = await carregarConfiguracaoVideosServidor();
+    arquivosVideos = isModoSala ? config.sala : config.hall;
+    if (!Array.isArray(arquivosVideos) || arquivosVideos.length === 0) {
+        arquivosVideos = isModoSala ? DEFAULT_VIDEOS_SALA : DEFAULT_VIDEOS_HALL;
+    }
+}
+
+async function alternarConteudo() {
+    // Atualiza a lista de vídeos silenciosamente para pegar alterações feitas no notebook remoto
+    await aplicarConfiguracaoVideos();
+    
+    // Se a nova lista for menor e o índice ficou fora de alcance, reseta para o primeiro
+    if (indiceVideoAtual >= arquivosVideos.length) {
+        indiceVideoAtual = 0;
+    }
+
     const videoTag = document.getElementById('meuVideo');
     const sourceTag = document.getElementById('meuVideoSource');
     const overlay = document.getElementById('video-overlay');
 
-    if (!videoTag || !overlay) return;
+    if (!videoTag || !overlay || arquivosVideos.length === 0) {
+        setTimeout(alternarConteudo, tempoExibicaoTabela);
+        return;
+    }
 
     // Mostra o vídeo
     sourceTag.src = arquivosVideos[indiceVideoAtual];
     videoTag.load();
     overlay.style.display = 'block';
     
-    videoTag.play().catch(() => overlay.style.display = 'none');
+    videoTag.play().catch((err) => {
+        console.warn("Erro ao reproduzir vídeo (pode ter sido excluído ou inválido):", err);
+        overlay.style.display = 'none';
+        indiceVideoAtual = (indiceVideoAtual + 1) % arquivosVideos.length;
+        setTimeout(alternarConteudo, tempoExibicaoTabela); // Força a continuação do ciclo
+    });
 
     videoTag.onended = () => {
         overlay.style.display = 'none'; // Volta para a tabela
@@ -190,13 +251,6 @@ function alternarConteudo() {
     };
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    atualizarDataHora();
-    setInterval(atualizarDataHora, 1000);
-    buscarDados();
-    setInterval(buscarDados, 60000);
-    setTimeout(alternarConteudo, tempoExibicaoTabela);
-});
 // --- PAINEL DE EMERGÊNCIA ---
 
 // Dados de emergência (armazenados localmente)
@@ -204,10 +258,29 @@ let emergencyEntradas = [];
 
 // Constantes para localStorage
 const EMERGENCY_KEY = 'painel_emergencia_dados';
+const CACHE_API_KEY = 'painel_hall_cache';
 
 // Funções de gerenciamento de emergência
 function salvarEntradasEmergencia() {
     localStorage.setItem(EMERGENCY_KEY, JSON.stringify(emergencyEntradas));
+}
+
+function salvarCacheDadosAPI(dados) {
+    localStorage.setItem(CACHE_API_KEY, JSON.stringify({ timestamp: Date.now(), dados }));
+}
+
+function carregarCacheDadosAPI() {
+    try {
+        const raw = localStorage.getItem(CACHE_API_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.dados)) return [];
+        return parsed.dados;
+    } catch (err) {
+        console.warn('Falha ao carregar cache de dados da API:', err);
+        localStorage.removeItem(CACHE_API_KEY);
+        return [];
+    }
 }
 
 function carregarEntradasEmergencia() {
@@ -216,7 +289,18 @@ function carregarEntradasEmergencia() {
         if (!raw) return [];
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) return [];
-        emergencyEntradas = parsed;
+        
+        // Auto-limpeza inteligente: Mantém baseada no término real do velório.
+        // Ex: Velório de 16h as 17h, some às 21h. 
+        // Velório de 20h às 10h do DIA SEGUINTE, só sumirá às 14h do DIA SEGUINTE.
+        const agora = new Date();
+        const limite = new Date(agora.getTime() - 4 * 60 * 60 * 1000);
+        emergencyEntradas = parsed.filter(e => new Date(e.data_fim) > limite);
+        
+        if (emergencyEntradas.length !== parsed.length) {
+            salvarEntradasEmergencia(); // Atualiza o localStorage limpo
+        }
+        
         return emergencyEntradas;
     } catch (err) {
         console.warn('Falha ao carregar entradas de emergência:', err);
@@ -295,15 +379,45 @@ function parseCSV(csvText) {
 }
 
 // Event listeners para o painel de emergência
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     atualizarDataHora();
     setInterval(atualizarDataHora, 1000);
+    carregarEntradasEmergencia();
+    atualizarStatusEmergencia();
+    await aplicarConfiguracaoVideos();
     buscarDados();
     setInterval(buscarDados, 60000);
     setTimeout(alternarConteudo, tempoExibicaoTabela);
+
+    // Auto-reload diário (Digital Signage): Limpa a memória da TV recarregando o painel às 03:00 AM
+    setInterval(() => {
+        const dataReload = new Date();
+        if (dataReload.getHours() === 3 && dataReload.getMinutes() === 0) {
+            window.location.reload(true);
+        }
+    }, 60000);
+
+    window.addEventListener('online', () => {
+        atualizarStatusEmergencia();
+        buscarDados();
+    });
+
+    window.addEventListener('offline', () => {
+        atualizarStatusEmergencia();
+        const memoriaisCache = carregarCacheDadosAPI();
+        if (memoriaisCache.length > 0) {
+            renderizar(mesclarEmergencia(memoriaisCache));
+        }
+    });
     
-    // Carregar dados de emergência
-    carregarEntradasEmergencia();
+    // Atalho discreto para a página de administração de vídeos (Clique Duplo no Relógio)
+    const relogio = document.querySelector('.header-relogio');
+    if (relogio) {
+        relogio.addEventListener('dblclick', (e) => {
+            e.stopPropagation(); // Impede de ativar o tela-cheia junto
+            window.location.href = '/admin-videos.html';
+        });
+    }
     
     // Botão de emergência no header
     const btnEmergencia = document.getElementById('btn-emergencia');

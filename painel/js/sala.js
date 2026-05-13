@@ -4,17 +4,42 @@ let modoHallAtivo = false;
 
 async function gerenciarTelaSala() {
     try {
-        // 1. Verificar localStorage para entradas manuais ativas para esta sala
+        let apiRetornouDados = false;
+        let dadosAPI = null;
+        const agora = new Date();
+
+        // 1. Prioridade: Buscar dados da API primeiro
+        try {
+            const response = await fetch(`/api/sala/${numeroSala}`);
+            if (!response.ok) throw new Error('Servidor offline ou indisponível');
+            const dados = await response.json();
+
+            if (dados.status !== "disponivel" && (!dados.data_fim_raw || agora <= new Date(dados.data_fim_raw))) {
+                dadosAPI = dados;
+                apiRetornouDados = true;
+            }
+        } catch(erroFetch) {
+            console.warn("Erro de conexão ao buscar dados da API da sala:", erroFetch);
+        }
+
+        // Se a API retornou evento válido, exibe e encerra
+        if (apiRetornouDados && dadosAPI) {
+            exibirDadosDoMemorial(dadosAPI);
+            return;
+        }
+
+        // 2. Se a API falhou ou está "disponível", verifica entrada manual local (Fallback)
         let entradaManual = null;
         try {
             const raw = localStorage.getItem('painel_emergencia_dados');
             if (raw) {
                 const entradas = JSON.parse(raw);
-                const agora = new Date();
                 entradaManual = entradas.find(e => {
                     const numeroApenas = String(e.sala).replace(/\D/g, '');
+                    const paramApenas = numeroSala.replace(/\D/g, '');
+                    const matchSala = (numeroApenas && paramApenas && numeroApenas === paramApenas) || (String(e.sala).toLowerCase() === numeroSala.toLowerCase());
                     const fim = new Date(e.data_fim);
-                    return numeroApenas === numeroSala && agora <= fim;
+                    return matchSala && agora <= fim;
                 });
             }
         } catch(err) {
@@ -40,17 +65,10 @@ async function gerenciarTelaSala() {
             return;
         }
 
-        const response = await fetch(`/api/sala/${numeroSala}`);
-        const dados = await response.json();
-        const agora = new Date();
-
-        if (dados.status === "disponivel" || (dados.data_fim_raw && agora > new Date(dados.data_fim_raw))) {
-            if (!modoHallAtivo) {
-                modoHallAtivo = true;
-                iniciarModoHallNaSala();
-            }
-        } else {
-            exibirDadosDoMemorial(dados);
+        // 3. Se não há dados válidos em nenhuma fonte, ativa o Modo Hall
+        if (!modoHallAtivo) {
+            modoHallAtivo = true;
+            iniciarModoHallNaSala();
         }
     } catch (erro) {
         console.error("Erro ao gerenciar tela:", erro);
@@ -158,8 +176,16 @@ function iniciarModoHallNaSala() {
 // TELA CHEIA
 document.addEventListener('dblclick', () => {
     if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-    else document.exitFullscreen();
+    else if (document.exitFullscreen) document.exitFullscreen();
 });
+
+// AUTO-RELOAD DIÁRIO (Digital Signage): Evita vazamento de memória e travamentos na Raspberry Pi
+setInterval(() => {
+    const dataReload = new Date();
+    if (dataReload.getHours() === 3 && dataReload.getMinutes() === 0) {
+        window.location.reload(true);
+    }
+}, 60000);
 
 setInterval(gerenciarTelaSala, 60000);
 gerenciarTelaSala();

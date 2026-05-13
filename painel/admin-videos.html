@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuração de Vídeos - Bosque da Esperança</title>
+    <link rel="stylesheet" href="css/admin-videos.css">
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <a href="/" title="Voltar ao Hall">
+                <img src="videos/logo_bosque.png" alt="Logo" class="logo" onerror="this.style.display='none'">
+            </a>
+            <h1>Configuração de Vídeos</h1>
+        </header>
+
+        <main class="admin-main">
+            <div id="config-message" class="toast-message"></div>
+
+            <form id="video-config-form" class="config-form">
+                <section class="config-section">
+                    <div class="section-header">
+                        <h2>Vídeos do Hall Principal</h2>
+                        <input type="file" id="upload-hall" accept="video/mp4,video/webm,video/quicktime" multiple class="hidden-upload">
+                        <button type="button" class="btn-add-video" onclick="document.getElementById('upload-hall').click()">+ Adicionar Vídeos</button>
+                    </div>
+                    <p class="section-desc">Vídeos a serem exibidos no painel do Hall.</p>
+                    <div id="visual-videos-hall" class="video-grid"></div>
+                </section>
+
+                <section class="config-section">
+                    <div class="section-header">
+                        <h2>Vídeos das Salas</h2>
+                        <input type="file" id="upload-sala" accept="video/mp4,video/webm,video/quicktime" multiple class="hidden-upload">
+                        <button type="button" class="btn-add-video" onclick="document.getElementById('upload-sala').click()">+ Adicionar Vídeos</button>
+                    </div>
+                    <p class="section-desc">Vídeos a serem exibidos nos painéis das Salas.</p>
+                    <div id="visual-videos-sala" class="video-grid"></div>
+                </section>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-save">Salvar Configurações</button>
+                    <button type="button" id="btn-reset-videos" class="btn-back">Restaurar Padrão</button>
+                </div>
+            </form>
+        </main>
+    </div>
+    <script src="js/video-config.js"></script>
+</body>
+</html>
