@@ -71,7 +71,7 @@ body, html {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--header-padding) 5%;
+    padding: var(--header-padding) 8%;
     box-sizing: border-box;
     min-height: clamp(80px, 10vw, 160px);
     position: relative; /* Container para centralização exata da data */
@@ -105,6 +105,8 @@ body, html {
     font-weight: 700;
     white-space: nowrap;
     flex-shrink: 0;
+    width: 17%;
+    text-align: left;
 }
 
 .painel-status {
@@ -112,7 +114,7 @@ body, html {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: clamp(10px, 1.2vw, 16px) 5%;
+    padding: clamp(10px, 1.2vw, 16px) 8%;
     background: #f9f3d8;
     color: #333333;
     border-bottom: 1px solid #e7d5a0;
@@ -344,10 +346,10 @@ body, html {
 
 .colunas-header {
     display: grid;
-    grid-template-columns: var(--icon-size) var(--foto-size) 2.5fr 0.8fr 1.3fr 1.4fr 1.2fr;
+    grid-template-columns: var(--icon-size) var(--foto-size) 2.5fr 0.8fr 1.3fr 1.4fr 17%;
     align-items: center;
     gap: var(--row-gap);
-    padding: clamp(6px, 0.8vw, 14px) 5%;
+    padding: clamp(6px, 0.8vw, 14px) 8%;
     box-sizing: border-box;
     background-color: #f5f5f5;
     border-bottom: 2px solid var(--cor-primaria);
@@ -365,16 +367,21 @@ body, html {
     text-overflow: ellipsis;
 }
 
+/* Alinha o título "Status" à esquerda na sua coluna para alinhar com o relógio */
+.colunas-header span:last-child {
+    text-align: left;
+}
+
 /* ==========================================================================
    7. Linha de Informação (grid de 7 colunas)
    ========================================================================== */
 
 .info-row {
     display: grid;
-    grid-template-columns: var(--icon-size) var(--foto-size) 2.5fr 0.8fr 1.3fr 1.4fr 1.2fr;
+    grid-template-columns: var(--icon-size) var(--foto-size) 2.5fr 0.8fr 1.3fr 1.4fr 17%;
     align-items: center;
     gap: var(--row-gap);
-    padding: var(--row-padding-v) 5%;
+    padding: var(--row-padding-v) 8%;
     box-sizing: border-box;
     border-bottom: 1px solid #f0f0f0;
     transition: background-color 0.3s ease;
@@ -552,13 +559,18 @@ body, html {
     text-overflow: ellipsis;
 }
 
+/* Alinhamento do status na tabela para acompanhar o relógio no topo */
+.info-status {
+    text-align: left;
+}
+
 /* ==========================================================================
    8. Telas médias — tablets em paisagem / monitores pequenos
    ========================================================================== */
 
 @media (max-width: 1100px) {
     .colunas-header {
-        grid-template-columns: var(--foto-size) 2fr auto auto auto auto;
+        grid-template-columns: var(--foto-size) 2fr auto auto auto 17%;
         gap: clamp(8px, 1.5vw, 20px);
     }
 
@@ -567,7 +579,7 @@ body, html {
     }
 
     .info-row {
-        grid-template-columns: var(--foto-size) 2fr auto auto auto auto;
+        grid-template-columns: var(--foto-size) 2fr auto auto auto 17%;
         gap: clamp(8px, 1.5vw, 20px);
     }
 
