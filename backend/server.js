@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: '../.env' });
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
@@ -9,18 +9,17 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
-const API_PORT = process.env.API_PORT || 3000;
+const API_PORT = process.env.API_PORT || 5000;
 const BUBBLE_API_URL = process.env.BUBBLE_API_URL;
 const BUBBLE_TOKEN = process.env.BUBBLE_TOKEN;
 
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, '..', 'painel')));
 
-// --- FUNÇÕES AUXILIARES DE FORMATAÇÃO ---
+// --- FUNÇÕES AUXILIARES DE FORMATAÇÃO E STATUS ---
 function formatarData(isoString) {
     if (!isoString) return "--.--.----";
     const data = new Date(isoString);
-    // Garante que a data seja lida em UTC para evitar erro de "um dia antes"
     const dataFormatada = data.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
     return dataFormatada.replace(/\//g, '.');
 }
@@ -33,6 +32,22 @@ function formatarHora(isoString) {
         minute: '2-digit', 
         timeZone: 'America/Sao_Paulo' 
     });
+}
+
+function converterHoraParaData(horaString) {
+    const dataBR = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    return new Date(`${dataBR}T${horaString}:00-03:00`);
+}
+
+function calcularStatus(dataInicio, dataFim) {
+    const agora = new Date();
+    if (agora > dataFim) {
+        return "encerrado";
+    } else if (agora >= dataInicio && agora <= dataFim) {
+        return "em andamento";
+    } else {
+        return "agendado";
+    }
 }
 
 // --- ROTA 1: PORTA DA SALA (Individual) ---
@@ -66,14 +81,13 @@ app.get('/api/sala/:id', async (req, res) => {
     } catch (e) { res.status(500).json({ erro: e.message }); }
 });
 
-// --- ROTA 2: PAINEL DO HALL (Somente ativos hoje, incluindo 30min após encerramento) ---
+// --- ROTA 2: PAINEL DO HALL ---
 app.get('/api/hall', async (req, res) => {
     try {
         const agora = new Date();
-        // Limite inferior: início do dia de hoje
         const inicioDoDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 0, 0, 0).toISOString();
-        // Limite superior para data_inicio: fim do dia
         const fimDoDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59).toISOString();
+        
         const response = await axios.get(BUBBLE_API_URL, {
             headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` },
             params: {
@@ -84,16 +98,72 @@ app.get('/api/hall', async (req, res) => {
                 ])
             }
         });
-        const lista = response.data.response.results.map(item => ({
-            nome: item.falecido_nome,
-            sala: item.sala_cerimonia,
-            foto: item["Foto falecido"] || null,
-            destino: item["local da sepultura"] || null,
-            data_inicio: item.data_inicio || null,
-            data_fim: item.data_fim || null
-        }));
+
+        // 1. DADOS MANUAIS SIMULANDO O BUBBLE (usando as chaves exatas da API)
+        const dadosBaseManuais = [
+            { 
+                "falecido_nome": "José Alencar de Guiar Pereira", 
+                "sala_cerimonia": "1", 
+                "data_inicio": converterHoraParaData("12:00").toISOString(), 
+                "data_fim": converterHoraParaData("16:00").toISOString(), 
+                "local da sepultura": "Ipê",
+                "Foto falecido": null
+            },
+            { 
+                "falecido_nome": "Rosa Do Menino Jesus", 
+                "sala_cerimonia": "7", 
+                "data_inicio": converterHoraParaData("11:00").toISOString(), 
+                "data_fim": converterHoraParaData("15:00").toISOString(), 
+                "local da sepultura": "Angico",
+                "Foto falecido": null
+            },
+            { 
+                "falecido_nome": "Teodoro Elias Barbosa", 
+                "sala_cerimonia": "DIRETO", 
+                "data_inicio": converterHoraParaData("15:30").toISOString(), 
+                "data_fim": converterHoraParaData("15:35").toISOString(), 
+                "local da sepultura": "Hibisco",
+                "Foto falecido": null
+            }
+        ];
+
+        // 2. FUNDIR OS DADOS ANTES DO MAP
+        // Garantimos que a API e os dados manuais passem pela exata mesma lógica
+        const resultadosBubble = response.data.response.results || [];
+        const dadosCompletos = [...resultadosBubble, ...dadosBaseManuais];
+        
+        // 3. MAPEAR E CALCULAR TUDO JUNTO
+        const lista = dadosCompletos.map(item => {
+            const dInicio = new Date(item.data_inicio);
+            const dFim = new Date(item.data_fim);
+            
+            // Tratamento para não exibir "Sala" antes de "DIRETO"
+            let nomeSala = item.sala_cerimonia || "";
+            if (nomeSala.toUpperCase() === "DIRETO") {
+                nomeSala = "DIRETO";
+            } else if (!nomeSala.toLowerCase().includes("sala")) {
+                nomeSala = "Sala " + nomeSala; 
+            }
+            
+            return {
+                nome: item.falecido_nome,
+                sala: nomeSala,
+                foto: item["Foto falecido"] || null,
+                destino: item["local da sepultura"] || null,
+                data_inicio: item.data_inicio || null,
+                data_fim: item.data_fim || null,
+                status: calcularStatus(dInicio, dFim)
+            };
+        });
+
+        console.log(`Sucesso! Processados ${resultadosBubble.length} do Bubble e ${dadosBaseManuais.length} manuais.`);
+        
         res.json(lista);
-    } catch (e) { res.status(500).json({ erro: e.message }); }
+
+    } catch (e) { 
+        console.error("ERRO NA API DO BUBBLE:", e.response ? e.response.data : e.message);
+        res.status(500).json({ erro: e.message }); 
+    }
 });
 
 // Serve index.html for all other routes (SPA fallback)
