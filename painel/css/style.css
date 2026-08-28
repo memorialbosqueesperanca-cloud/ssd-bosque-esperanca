@@ -42,10 +42,10 @@ body, html {
     margin: 0;
     padding: 0;
     width: 100%;
-    min-height: 100vh;
+    height: 100vh;
     font-family: var(--fonte-principal);
     background-color: var(--cor-fundo);
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
 /* ==========================================================================
@@ -56,7 +56,7 @@ body, html {
     display: flex;
     flex-direction: column;
     width: 100%;
-    min-height: 100vh;
+    height: 100vh;
     margin: 0 auto;
     box-sizing: border-box;
 }
@@ -160,23 +160,66 @@ body, html {
     transform: translateY(-1px);
 }
 
-.botao-emergencia-discreto {
-    position: fixed;
-    bottom: 28px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: transparent;
-    color: rgba(66, 69, 67, 0.3); /* Discreto: cor do texto principal com transparência */
-    border: none;
-    padding: 5px 10px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
+.painel-rodape-unificado {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: auto;
+    padding: 6px 0 14px 0;
     z-index: 100;
 }
 
-.botao-emergencia-discreto:hover {
+.indicador-paginacao {
+    text-align: center;
+    color: rgba(66, 69, 67, 0.7);
+    font-size: clamp(12px, 1.2vw, 15px);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    transition: opacity 0.4s ease;
+    min-height: 20px;
+}
+
+.utilitarios-rodape-discretos {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    opacity: 0.35;
+    transition: opacity 0.3s ease;
+}
+
+.utilitarios-rodape-discretos:hover {
+    opacity: 0.95;
+}
+
+.botao-rodape-discreto,
+.botao-emergencia-discreto {
+    background: transparent;
     color: rgba(66, 69, 67, 0.8);
+    border: none;
+    padding: 4px 8px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    text-transform: lowercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+}
+
+.botao-rodape-discreto:hover,
+.botao-emergencia-discreto:hover {
+    color: #01813D;
+    text-decoration: underline;
+}
+
+.separador-discreto {
+    color: rgba(66, 69, 67, 0.4);
+    font-size: 11px;
+    user-select: none;
 }
 
 /* ==========================================================================
@@ -337,7 +380,15 @@ body, html {
     flex-direction: column;
     padding: clamp(10px, 1.5vw, 30px) 0;
     box-sizing: border-box;
-    overflow-y: hidden;
+    overflow: hidden;
+}
+
+#painel-corpo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    min-height: 0;
 }
 
 /* ==========================================================================
@@ -377,11 +428,14 @@ body, html {
    ========================================================================== */
 
 .info-row {
+    flex: 1;
+    min-height: 0;
+    max-height: 14vh;
     display: grid;
     grid-template-columns: var(--icon-size) var(--foto-size) 2.5fr 0.8fr 1.3fr 1.4fr 17%;
     align-items: center;
     gap: var(--row-gap);
-    padding: var(--row-padding-v) 8%;
+    padding: 0 8%;
     box-sizing: border-box;
     border-bottom: 1px solid #f0f0f0;
     transition: background-color 0.3s ease;
@@ -389,7 +443,6 @@ body, html {
 
 .info-row--encerrado {
     opacity: 0.45;
-    filter: grayscale(1);
     pointer-events: none;
 }
 
@@ -623,7 +676,7 @@ body, html {
 
     /*
      * Card em grid de 2 linhas com áreas nomeadas:
-     * Linha 1 (primária):   foto | nome | sala | status
+     * Linha 1 (primária):  foto | nome | sala | status
      * Linha 2 (secundária): .    | horário | destino | destino
      */
     .info-row {
@@ -632,7 +685,7 @@ body, html {
         grid-template-rows: auto auto;
         grid-template-areas:
             "foto  nome     sala     status"
-            ".     horario  destino  destino";
+            ".      horario  destino  destino";
         align-items: center;
         column-gap: clamp(8px, 2.5vw, 16px);
         row-gap: 4px;

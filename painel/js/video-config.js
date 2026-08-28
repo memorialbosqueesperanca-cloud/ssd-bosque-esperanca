@@ -43,37 +43,30 @@ function renderizarVideos() {
         lista.forEach((caminho, index) => {
             const card = document.createElement('div');
             card.className = 'video-card';
-            
             const vid = document.createElement('video');
             vid.src = caminho;
             vid.className = 'video-thumbnail';
             vid.muted = true;
             vid.preload = 'metadata';
-            vid.onloadedmetadata = () => { vid.currentTime = 1; }; // Capturar um frame não preto
-            
+            vid.onloadedmetadata = () => { vid.currentTime = 1; };
             const info = document.createElement('div');
             info.className = 'video-info';
-            
             const title = document.createElement('span');
             title.className = 'video-path';
             title.title = caminho;
             title.textContent = caminho.split('/').pop() || caminho;
-            
             const actions = document.createElement('div');
             actions.className = 'video-actions';
-
             const btnSubstituir = document.createElement('button');
             btnSubstituir.type = 'button';
             btnSubstituir.className = 'btn-replace-video';
             btnSubstituir.innerHTML = 'Substituir';
             btnSubstituir.onclick = () => substituirVideo(alvo, index);
-
             const btnExcluir = document.createElement('button');
             btnExcluir.type = 'button';
             btnExcluir.className = 'btn-delete-video';
             btnExcluir.innerHTML = 'Remover';
             btnExcluir.onclick = () => removerVideo(alvo, index);
-            
             actions.appendChild(btnSubstituir);
             actions.appendChild(btnExcluir);
             info.appendChild(title);
@@ -86,43 +79,20 @@ function renderizarVideos() {
     renderLista('hall', videoConfigState.hall);
     renderLista('sala', videoConfigState.sala);
 }
-
-function mostrarMensagem(texto, sucesso = true) {
-    const mensagemEl = document.getElementById('config-message');
-    if (!mensagemEl) return;
-    mensagemEl.textContent = texto;
-    mensagemEl.style.backgroundColor = sucesso ? '#d1e7dd' : '#f8d7da';
-    mensagemEl.style.color = sucesso ? '#0f5132' : '#842029';
-    mensagemEl.style.border = `1px solid ${sucesso ? '#badbcc' : '#f5c2c7'}`;
-
-    setTimeout(() => {
-        if (mensagemEl.textContent === texto) {
-            mensagemEl.textContent = '';
-            mensagemEl.style.backgroundColor = 'transparent';
-            mensagemEl.style.border = 'none';
-        }
-    }, 5000);
-}
-
-function substituirVideo(alvo, index) {
+async function substituirVideo(alvo, index) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'video/mp4,video/webm,video/quicktime';
     input.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        
         const formData = new FormData();
         formData.append('videoFile', file);
-        
-        mostrarMensagem('Enviando vídeo para substituição...', true);
-        
         try {
             const response = await fetch(VIDEO_UPLOAD_URL, {
                 method: 'POST',
                 body: formData
             });
-            
             if (response.ok) {
                 const result = await response.json();
                 if (result.success) {
@@ -130,7 +100,7 @@ function substituirVideo(alvo, index) {
                     renderizarVideos();
                     mostrarMensagem('Vídeo substituído com sucesso!', true);
                 } else {
-                    mostrarMensagem(result.erro || 'Erro ao substituir o vídeo.', false);
+                    mostrarMensagem('Falha no upload da substituição.', false);
                 }
             } else {
                 mostrarMensagem('Falha no upload da substituição.', false);
@@ -140,6 +110,20 @@ function substituirVideo(alvo, index) {
         }
     };
     input.click();
+}
+
+// ===============================
+// Função utilitária para mostrar mensagens
+// ===============================
+function mostrarMensagem(msg, sucesso) {
+    const el = document.getElementById('config-message');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'toast-message ' + (sucesso ? 'success' : 'error');
+    el.style.display = 'block';
+    setTimeout(() => {
+        el.style.display = 'none';
+    }, 3000);
 }
 
 function removerVideo(alvo, index) {

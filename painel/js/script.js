@@ -21,7 +21,6 @@ function calcularStatus(data_inicio, data_fim) {
     const inicio = new Date(data_inicio);
     const fim = new Date(data_fim);
     
-    // Regras de negócio para as cores e textos de status
     const trintaMinAntes = new Date(fim.getTime() - 30 * 60 * 1000);
     const vinteMinDepois = new Date(fim.getTime() + 20 * 60 * 1000);
 
@@ -32,20 +31,27 @@ function calcularStatus(data_inicio, data_fim) {
     } else if (agora >= trintaMinAntes && agora <= vinteMinDepois) {
         return { texto: 'Encerrando', cor: '#FAA507' }; // Laranja
     } else {
-        return { texto: 'Encerrado', cor: '#666666' }; // Cinza
+        return { texto: 'Encerrado', cor: '#cf0303' }; // Cinza
     }
 }
 
 // 3. FORMATA HORÁRIO
-function formatarHorario(data_inicio, data_fim) {
-    if (!data_inicio || !data_fim) return 'Horário a definir';
-    const opcoes = { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' };
-    const hi = new Date(data_inicio).toLocaleTimeString('pt-BR', opcoes);
-    const hf = new Date(data_fim).toLocaleTimeString('pt-BR', opcoes);
-    return `${hi} às ${hf}`;
+function formatarHoraUniversal(str) {
+    if (!str) return '--:--';
+    const s = String(str).trim();
+    if (s.endsWith('Z')) {
+        return new Date(s).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+    }
+    const limpo = s.replace(/\.\d+$/, '');
+    return limpo.includes('T') ? limpo.split('T')[1].slice(0, 5) : limpo.slice(0, 5);
 }
 
-// 4. BUSCA NO BACKEND (CONECTADO AO SEU SERVER.JS)
+function formatarHorario(data_inicio, data_fim) {
+    if (!data_inicio || !data_fim) return 'Horário a definir';
+    return `${formatarHoraUniversal(data_inicio)} às ${formatarHoraUniversal(data_fim)}`;
+}
+
+// 4. BUSCA NO BACKEND
 async function buscarDados() {
     try {
         const response = await fetch('/api/hall');
@@ -65,10 +71,20 @@ async function buscarDados() {
     }
 }
 
-// 5. RENDERIZAÇÃO DA TABELA
+// 5. RENDERIZAÇÃO DA TABELA E PAGINAÇÃO
 function renderizar(lista) {
     const corpo = document.getElementById('painel-corpo');
     if (!corpo) return;
+
+    // Filtrar velórios encerrados há mais de 3 horas
+    const agoraFiltro = new Date().getTime();
+    const tresHorasEmMs = 3 * 60 * 60 * 1000;
+    
+    lista = lista.filter(item => {
+        if (!item.data_fim) return true; 
+        const fimTempo = new Date(item.data_fim).getTime();
+        return (agoraFiltro - fimTempo) <= tresHorasEmMs;
+    });
 
     if (lista.length === 0) {
         corpo.innerHTML = '<div class="info-row"><div class="text-default" style="width:100%; text-align:center;">Nenhuma homenagem agendada para hoje.</div></div>';
@@ -77,11 +93,6 @@ function renderizar(lista) {
 
     corpo.innerHTML = '';
 
-    // Ordenação:
-    // - Primeiro: Encerrando (quem termina antes vem antes)
-    // - Depois: Em andamento (ordem por início)
-    // - Depois: Previsto (ordem por início)
-    // - Por último: Encerrado
     const ordemStatus = { 'Encerrando': 0, 'Em andamento': 1, 'Previsto': 2, 'Encerrado': 3 };
     lista.sort((a, b) => {
         const sa = calcularStatus(a.data_inicio, a.data_fim).texto;
@@ -94,21 +105,46 @@ function renderizar(lista) {
         const fimA = new Date(a.data_fim).getTime();
         const fimB = new Date(b.data_fim).getTime();
 
-        if (sa === 'Encerrando') {
-            return fimA - fimB || inicioA - inicioB;
-        }
-
-        if (sa === 'Em andamento' || sa === 'Previsto') {
-            return inicioA - inicioB || fimA - fimB;
-        }
+        if (sa === 'Encerrando') return fimA - fimB || inicioA - inicioB;
+        if (sa === 'Em andamento' || sa === 'Previsto') return inicioA - inicioB || fimA - fimB;
 
         return fimA - fimB || inicioA - inicioB;
     });
 
-    lista.forEach(item => {
+    const listaFiltrada = lista.filter(item => {
+        const tipo = String(item.tipo_servico || '').toUpperCase();
+        const dest = String(item.destino || '').toUpperCase();
+        const salaStr = item.sala ? String(item.sala).trim().toLowerCase() : '';
+        const ehSemSala = !salaStr || salaStr === 'direto' || salaStr === 'n/d' || salaStr === '-' || salaStr === 'null';
+
+        const ehCremacao = tipo.includes('CREMA') || dest.includes('CREMA');
+        const ehVelorio = tipo.includes('VELÓRIO') || (!ehSemSala && item.id_memorial);
+
+        if (ehCremacao && ehSemSala && !ehVelorio) {
+            return false;
+        }
+        return true;
+    });
+
+    listaFiltrada.forEach(item => {
         const linha = document.createElement('div');
         const status = calcularStatus(item.data_inicio, item.data_fim);
-        const sala = item.sala ? (item.sala.toLowerCase().includes('sala') ? item.sala : `Sala ${item.sala}`) : '-';
+        
+        const salaStr = item.sala ? String(item.sala).trim() : '';
+        const salaLower = salaStr.toLowerCase();
+        let sala = 'Direto';
+        if (salaStr && salaStr !== '-' && salaLower !== 'n/d' && salaStr !== 'null') {
+            if (salaLower.includes('imersiva')) {
+                sala = 'Imersiva';
+            } else if (salaStr === '3' || salaLower === 'sala 3') {
+                sala = 'Sala 3';
+            } else if (salaLower.includes('sala') || salaLower.includes('direto')) {
+                sala = salaStr;
+            } else {
+                sala = `Sala ${salaStr}`;
+            }
+        }
+            
         const foto = item.foto ? item.foto : 'videos/logo_bosque.png';
 
         linha.className = 'info-row' + (status.texto === 'Encerrado' ? ' info-row--encerrado' : '');
@@ -120,7 +156,6 @@ function renderizar(lista) {
             }
         }
         
-        // Lógica da seta baseada no número da sala
         const salasEsquerda = ['5', '6', '7', '8'];
         const numeroApenas = String(item.sala).replace(/\D/g, '');
         const setaEsquerda = salasEsquerda.includes(numeroApenas);
@@ -129,44 +164,225 @@ function renderizar(lista) {
             ? `<svg class="info-row__icon" viewBox="0 0 24 24"><path d="M15 6L9 12L15 18" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`
             : `<svg class="info-row__icon" viewBox="0 0 24 24"><path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`;
 
-        let destinoTexto = item.destino || "Cremação";
-        if (!destinoTexto || destinoTexto.trim() === "" || destinoTexto.toLowerCase() === "consulte a recepção") {
-            destinoTexto = "Cremação";
+        let destinoTexto = item.destino || "Consulte a ACM";
+        const mapaNomesQuadras = {
+            'PAIN II': 'PAINEIRAS II',
+            'PAIN': 'PAINEIRAS',
+            'PAINEIRAS II': 'PAINEIRAS II',
+            'PAINEIRAS': 'PAINEIRAS',
+            'FLAMBOY': 'FLAMBOYANT',
+            'FLAMBOYANT': 'FLAMBOYANT',
+            'BOUN': 'BOUGAINVILLE',
+            'BOUGAINVILLE': 'BOUGAINVILLE',
+            'ANGICO': 'ANGICO',
+            'ACACIA': 'ACÁCIA',
+            'ACÁCIA': 'ACÁCIA',
+            'HIBISCO': 'HIBISCO',
+            'IPÊ': 'IPÊ',
+            'IPE': 'IPÊ',
+            'FICUS': 'FICUS',
+            'ANGELIM': 'ANGELIM',
+            'BURITIS': 'BURITIS',
+            'MANACA': 'MANACÁ',
+            'MANACÁ': 'MANACÁ'
+        };
+
+        if (destinoTexto && destinoTexto !== 'Consulte a ACM' && destinoTexto !== 'Consulte a recepção' && destinoTexto !== 'Direto') {
+            if (/crema[çc][ãa]o/i.test(destinoTexto)) {
+                destinoTexto = 'Cremação';
+            } else if (destinoTexto.includes('QD:')) {
+                const matchQd = destinoTexto.match(/QD:\s*([^.\n]+)/i);
+                if (matchQd) {
+                    let qd = matchQd[1].trim().replace(/^\d+-/, '').trim().toUpperCase();
+                    destinoTexto = mapaNomesQuadras[qd] || qd;
+                }
+            } else if (/jazigo/i.test(destinoTexto) || /quadra/i.test(destinoTexto)) {
+                let parte = destinoTexto;
+                if (/jazigo/i.test(parte)) parte = parte.split(/jazigo/i)[0].replace(/[-–\s]+$/, '');
+                if (/quadra/i.test(parte)) parte = parte.replace(/^.*quadra\s*/i, '');
+                let qd = parte.trim().replace(/^\d+-/, '').trim().toUpperCase();
+                destinoTexto = mapaNomesQuadras[qd] || qd;
+            } else {
+                const upper = destinoTexto.toUpperCase();
+                if (mapaNomesQuadras[upper]) destinoTexto = mapaNomesQuadras[upper];
+            }
+        } else {
+            if (item.tipo_servico && String(item.tipo_servico).toUpperCase().includes('CREMA')) {
+                destinoTexto = 'Cremação';
+            } else {
+                destinoTexto = 'Consulte a ACM';
+            }
         }
-        // Exibir exatamente como veio preenchido, sem adicionar "Quadra" automaticamente
+
+        const estiloTextoLongo = `white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2;`;
 
         linha.innerHTML = `
             ${svgSeta}
             <div class="info-row__foto-wrapper">
                 <img class="info-row__foto" src="${foto}" onerror="this.src='videos/logo_bosque.png'">
             </div>
-            <div class="info-nome text-default">${item.nome || 'Homenageado'}</div>
-            <div class="info-sala text-default">${sala}</div>
+            <div class="info-nome text-default" style="${estiloTextoLongo}">${item.nome || 'Homenageado'}</div>
+            <div class="info-sala text-default" style="${estiloTextoLongo}">${sala}</div>
             <div class="info-horario text-default">${formatarHorario(item.data_inicio, item.data_fim)}</div>
-            <div class="info-destino text-default">${destinoTexto}</div>
+            <div class="info-destino text-default" style="${estiloTextoLongo}">${destinoTexto}</div>
             <div class="info-status text-highlight" style="color:${status.cor};">${status.texto}</div>
         `;
         corpo.appendChild(linha);
     });
 
-    // Ajuste dinâmico para caber todos os itens na tela sem rolar
-    corpo.style.transform = 'none';
-    corpo.style.transformOrigin = 'top center';
-    setTimeout(() => {
-        const scrollHeight = corpo.scrollHeight;
-        const maxHeight = corpo.parentElement ? corpo.parentElement.clientHeight : window.innerHeight * 0.8;
+    iniciarPaginacao();
+}
+
+// 5.1 FUNÇÃO DE PAGINAÇÃO AUTOMÁTICA
+let paginacaoInterval;
+
+function iniciarPaginacao() {
+    const ITENS_POR_PAGINA = 4; // Ajustado para 4 para testes
+    const TEMPO_POR_PAGINA = 120000; // Alterado para 2 minutos
+    let paginaAtual = 0;
+
+    const painelCorpo = document.getElementById('painel-corpo');
+    const todasLinhas = Array.from(painelCorpo.querySelectorAll('.info-row:not(.linha-invisivel)'));
+
+    clearInterval(paginacaoInterval);
+    
+    document.querySelectorAll('.linha-invisivel').forEach(e => e.remove());
+    let indicador = document.getElementById('indicador-paginacao');
+    
+    if (!indicador) {
+        indicador = document.createElement('div');
+        indicador.id = 'indicador-paginacao';
+        indicador.style.textAlign = 'center';
+        indicador.style.padding = '10px';
+        indicador.style.color = '#888';
+        indicador.style.fontSize = 'clamp(12px, 1.2vw, 16px)';
+        indicador.style.fontWeight = '700';
+        indicador.style.textTransform = 'uppercase';
+        indicador.style.letterSpacing = '1px';
+        indicador.style.transition = 'opacity 0.4s ease';
+        painelCorpo.parentNode.insertBefore(indicador, painelCorpo.nextSibling);
+    }
+
+    const totalPaginas = Math.ceil(todasLinhas.length / ITENS_POR_PAGINA);
+
+    // Ajusta o tempo de exibição do vídeo baseado na quantidade de páginas
+    if (totalPaginas > 0) {
+        tempoExibicaoTabela = totalPaginas * TEMPO_POR_PAGINA;
+    } else {
+        tempoExibicaoTabela = 15000;
+    }
+
+    // Aplicar linhas fantasmas mesmo se houver APENAS 1 página
+    if (todasLinhas.length <= ITENS_POR_PAGINA) {
+        todasLinhas.forEach(linha => linha.style.display = 'grid');
+        indicador.style.display = 'none';
         
-        if (scrollHeight > maxHeight && maxHeight > 0) {
-            const scale = maxHeight / scrollHeight;
-            corpo.style.transform = `scale(${scale * 0.96})`;
-            corpo.style.marginBottom = `-${scrollHeight * (1 - scale)}px`;
+        const itensFaltando = ITENS_POR_PAGINA - todasLinhas.length;
+        for (let i = 0; i < itensFaltando; i++) {
+            const dummy = document.createElement('div');
+            dummy.className = 'info-row linha-invisivel';
+            dummy.style.visibility = 'hidden'; 
+            painelCorpo.appendChild(dummy);
         }
-    }, 50);
+        return; 
+    }
+
+    indicador.style.display = 'block';
+
+    function mostrarPagina(novaPagina, animar = true, paginaAnterior = 0) {
+        const isVoltando = novaPagina < paginaAnterior;
+        const distanciaAnimação = '40px'; 
+        
+        let textoIndicador = `Exibindo página ${novaPagina + 1} de ${totalPaginas}`;
+        if (novaPagina === totalPaginas - 1) {
+            textoIndicador = `Página ${novaPagina + 1} de ${totalPaginas} &nbsp;&nbsp;|&nbsp;&nbsp; <span style="color: var(--cor-secundaria, #FAA507);">Retornando ao início...</span>`;
+        }
+        
+        const aplicarTrocaDeItens = () => {
+            todasLinhas.forEach(linha => linha.style.display = 'none');
+            document.querySelectorAll('.linha-invisivel').forEach(e => e.remove());
+
+            const inicio = novaPagina * ITENS_POR_PAGINA;
+            const fim = inicio + ITENS_POR_PAGINA;
+            const linhasPagina = todasLinhas.slice(inicio, fim);
+            
+            linhasPagina.forEach(linha => linha.style.display = 'grid');
+
+            const itensFaltando = ITENS_POR_PAGINA - linhasPagina.length;
+            for (let i = 0; i < itensFaltando; i++) {
+                const dummy = document.createElement('div');
+                dummy.className = 'info-row linha-invisivel';
+                dummy.style.visibility = 'hidden'; 
+                painelCorpo.appendChild(dummy);
+            }
+
+            indicador.innerHTML = textoIndicador;
+        };
+
+        if (!animar) {
+            aplicarTrocaDeItens();
+            painelCorpo.style.transform = 'translateY(0)';
+            painelCorpo.style.opacity = '1';
+            return;
+        }
+
+        // Saída
+        painelCorpo.style.transition = 'transform 0.4s ease-in, opacity 0.3s ease-in';
+        indicador.style.opacity = '0';
+        
+        if (isVoltando) {
+            painelCorpo.style.transform = `translateY(${distanciaAnimação})`; 
+        } else {
+            painelCorpo.style.transform = `translateY(-${distanciaAnimação})`; 
+        }
+        painelCorpo.style.opacity = '0';
+
+        setTimeout(() => {
+            aplicarTrocaDeItens(); 
+
+            // Entrada
+            painelCorpo.style.transition = 'none'; 
+            
+            if (isVoltando) {
+                painelCorpo.style.transform = `translateY(-${distanciaAnimação})`; 
+            } else {
+                painelCorpo.style.transform = `translateY(${distanciaAnimação})`; 
+            }
+            
+            void painelCorpo.offsetHeight;
+
+            painelCorpo.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s ease-out';
+            painelCorpo.style.transform = 'translateY(0)'; 
+            painelCorpo.style.opacity = '1'; 
+            indicador.style.opacity = '1';
+            
+        }, 400); 
+    }
+
+    mostrarPagina(paginaAtual, false);
+
+    paginacaoInterval = setInterval(() => {
+        let paginaAnterior = paginaAtual;
+        paginaAtual++;
+        
+        if (paginaAtual >= totalPaginas) {
+            paginaAtual = 0; 
+        }
+        
+        mostrarPagina(paginaAtual, true, paginaAnterior);
+    }, TEMPO_POR_PAGINA);
 }
 
 // 6. INICIALIZAÇÃO E VÍDEOS
 const urlParamsHall = new URLSearchParams(window.location.search);
 const isModoSala = urlParamsHall.get('modo') === 'sala';
+
+if (isModoSala) {
+    window.addEventListener('DOMContentLoaded', () => {
+        const btnEmergencia = document.getElementById('btn-emergencia');
+        if (btnEmergencia) btnEmergencia.style.display = 'none';
+    });
+}
 
 const VIDEO_CONFIG_URL = '/api/video-config';
 const DEFAULT_VIDEOS_HALL = ['videos/video1.mp4', 'videos/video2.mp4'];
@@ -179,7 +395,6 @@ async function carregarConfiguracaoVideosServidor() {
         if (!response.ok) throw new Error('Falha ao carregar configuração de vídeo');
         const config = await response.json();
         
-        // Salva com sucesso para o cache offline
         localStorage.setItem(CACHE_VIDEO_KEY, JSON.stringify(config));
         
         return {
@@ -203,7 +418,7 @@ async function carregarConfiguracaoVideosServidor() {
 }
 
 let arquivosVideos = isModoSala ? DEFAULT_VIDEOS_SALA : DEFAULT_VIDEOS_HALL;
-const tempoExibicaoTabela = 60000; // 1 minuto
+let tempoExibicaoTabela = 120000; // O valor será ajustado dinamicamente pela função iniciarPaginacao()
 let indiceVideoAtual = 0;
 
 async function aplicarConfiguracaoVideos() {
@@ -214,11 +429,28 @@ async function aplicarConfiguracaoVideos() {
     }
 }
 
+// Verifica se é final de semana ou sexta-feira após as 18h
+function isFinalDeSemanaSoVideo() {
+    const hoje = new Date();
+    const diaDaSemana = hoje.getDay(); // 0 = Domingo, 5 = Sexta, 6 = Sábado
+    const hora = hoje.getHours();
+    
+    // Retorna true se for Sábado (6) ou Domingo (0)
+    if (diaDaSemana === 0 || diaDaSemana === 6) {
+        return true;
+    }
+    
+    // Retorna true se for Sexta-feira (5) e a hora for 18h ou mais
+    if (diaDaSemana === 5 && hora >= 18) {
+        return true;
+    }
+    
+    return false;
+}
+
 async function alternarConteudo() {
-    // Atualiza a lista de vídeos silenciosamente para pegar alterações feitas no notebook remoto
     await aplicarConfiguracaoVideos();
     
-    // Se a nova lista for menor e o índice ficou fora de alcance, reseta para o primeiro
     if (indiceVideoAtual >= arquivosVideos.length) {
         indiceVideoAtual = 0;
     }
@@ -232,35 +464,53 @@ async function alternarConteudo() {
         return;
     }
 
-    // Mostra o vídeo
     sourceTag.src = arquivosVideos[indiceVideoAtual];
+    videoTag.muted = true;
+    videoTag.playsInline = true;
     videoTag.load();
     overlay.style.display = 'block';
     
     videoTag.play().catch((err) => {
-        console.warn("Erro ao reproduzir vídeo (pode ter sido excluído ou inválido):", err);
-        overlay.style.display = 'none';
+        // Trata interrupção benigna por economia de energia do Chrome / aba em segundo plano
+        if (err && (err.name === 'AbortError' || String(err.message).includes('paused to save power'))) {
+            // Não loga como erro crítico: o navegador apenas economizou energia na aba em segundo plano
+            return;
+        }
+
+        console.warn("Erro ao reproduzir vídeo:", err.message || err);
         indiceVideoAtual = (indiceVideoAtual + 1) % arquivosVideos.length;
-        setTimeout(alternarConteudo, tempoExibicaoTabela); // Força a continuação do ciclo
+        
+        // Tratamento de erro: se der falha, pula pro próximo
+        if (isFinalDeSemanaSoVideo()) {
+            setTimeout(alternarConteudo, 1000); 
+        } else {
+            overlay.style.display = 'none';
+            setTimeout(alternarConteudo, tempoExibicaoTabela); 
+        }
     });
 
     videoTag.onended = () => {
-        overlay.style.display = 'none'; // Volta para a tabela
         indiceVideoAtual = (indiceVideoAtual + 1) % arquivosVideos.length;
-        setTimeout(alternarConteudo, tempoExibicaoTabela);
+        
+        if (isFinalDeSemanaSoVideo()) {
+            // Emenda o próximo vídeo imediatamente, sem voltar para a tabela
+            alternarConteudo();
+        } else {
+            // Comportamento normal: oculta o vídeo e volta pra tabela
+            overlay.style.display = 'none'; 
+            setTimeout(alternarConteudo, tempoExibicaoTabela);
+        }
     };
 }
 
 // --- PAINEL DE EMERGÊNCIA ---
 
-// Dados de emergência (armazenados localmente)
 let emergencyEntradas = [];
+let editandoIndex = -1; 
 
-// Constantes para localStorage
 const EMERGENCY_KEY = 'painel_emergencia_dados';
 const CACHE_API_KEY = 'painel_hall_cache';
 
-// Funções de gerenciamento de emergência
 function salvarEntradasEmergencia() {
     localStorage.setItem(EMERGENCY_KEY, JSON.stringify(emergencyEntradas));
 }
@@ -277,7 +527,6 @@ function carregarCacheDadosAPI() {
         if (!parsed || !Array.isArray(parsed.dados)) return [];
         return parsed.dados;
     } catch (err) {
-        console.warn('Falha ao carregar cache de dados da API:', err);
         localStorage.removeItem(CACHE_API_KEY);
         return [];
     }
@@ -290,20 +539,16 @@ function carregarEntradasEmergencia() {
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) return [];
         
-        // Auto-limpeza inteligente: Mantém baseada no término real do velório.
-        // Ex: Velório de 16h as 17h, some às 21h. 
-        // Velório de 20h às 10h do DIA SEGUINTE, só sumirá às 14h do DIA SEGUINTE.
         const agora = new Date();
         const limite = new Date(agora.getTime() - 4 * 60 * 60 * 1000);
         emergencyEntradas = parsed.filter(e => new Date(e.data_fim) > limite);
         
         if (emergencyEntradas.length !== parsed.length) {
-            salvarEntradasEmergencia(); // Atualiza o localStorage limpo
+            salvarEntradasEmergencia(); 
         }
         
         return emergencyEntradas;
     } catch (err) {
-        console.warn('Falha ao carregar entradas de emergência:', err);
         localStorage.removeItem(EMERGENCY_KEY);
         return [];
     }
@@ -312,7 +557,6 @@ function carregarEntradasEmergencia() {
 function mesclarEmergencia(dadosAPI) {
     if (!Array.isArray(dadosAPI)) dadosAPI = [];
     
-    // Priorizar API: Se houver dados da API, verificar e remover entradas manuais conflitantes (mesma sala, sobreposição de horários)
     if (dadosAPI.length > 0) {
         let houveExclusao = false;
         const entradasValidas = emergencyEntradas.filter(manual => {
@@ -322,26 +566,21 @@ function mesclarEmergencia(dadosAPI) {
             
             const conflitoComAPI = dadosAPI.some(apiItem => {
                 const numSalaAPI = String(apiItem.sala).replace(/\D/g, '');
-                // Se a sala for diferente ou não possuir número, não há conflito
                 if (!numSalaManual || numSalaManual !== numSalaAPI) return false;
                 
                 const inicioAPI = new Date(apiItem.data_inicio);
                 const fimAPI = new Date(apiItem.data_fim);
                 
-                // Verifica sobreposição de tempo (inicio1 < fim2 && fim1 > inicio1)
                 return (inicioManual < fimAPI && fimManual > inicioAPI);
             });
             
-            if (conflitoComAPI) {
-                houveExclusao = true;
-            }
+            if (conflitoComAPI) houveExclusao = true;
             return !conflitoComAPI;
         });
         
         if (houveExclusao) {
             emergencyEntradas = entradasValidas;
             salvarEntradasEmergencia();
-            // Atualizar contadores visuais do painel caso algo tenha sido excluído
             if (typeof atualizarStatusEmergencia === 'function') {
                 setTimeout(atualizarStatusEmergencia, 0);
             }
@@ -351,7 +590,6 @@ function mesclarEmergencia(dadosAPI) {
     return [...dadosAPI, ...emergencyEntradas.map((item, index) => ({ ...item, isEmergencia: true, emergenciaIndex: index }))];
 }
 
-// Processar arquivo CSV/Excel
 function parseCSV(csvText) {
     const linhas = csvText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
     if (linhas.length < 2) return [];
@@ -364,8 +602,6 @@ function parseCSV(csvText) {
         
         cabecalhos.forEach((cabecalho, index) => {
             let valor = valores[index]?.trim() || '';
-            
-            // Mapeamento de campos comuns
             if (cabecalho.includes('nome')) item.nome = valor;
             else if (cabecalho.includes('sala')) item.sala = valor;
             else if (cabecalho.includes('inicio') || cabecalho.includes('data_inicio')) item.data_inicio = valor;
@@ -375,10 +611,10 @@ function parseCSV(csvText) {
         });
         
         return item;
-    }).filter(item => item.nome); // Só incluir itens com nome
+    }).filter(item => item.nome); 
 }
 
-// Event listeners para o painel de emergência
+// Event listeners
 document.addEventListener('DOMContentLoaded', async () => {
     atualizarDataHora();
     setInterval(atualizarDataHora, 1000);
@@ -386,10 +622,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     atualizarStatusEmergencia();
     await aplicarConfiguracaoVideos();
     buscarDados();
-    setInterval(buscarDados, 60000);
-    setTimeout(alternarConteudo, tempoExibicaoTabela);
+    
+    // Atualiza os dados a cada 10 minutos para não interromper a exibição completa das tabelas
+    setInterval(buscarDados, 600000); 
+    
+    // Verifica se é final de semana na inicialização
+    if (isFinalDeSemanaSoVideo()) {
+        alternarConteudo();
+    } else {
+        setTimeout(alternarConteudo, tempoExibicaoTabela);
+    }
 
-    // Auto-reload diário (Digital Signage): Limpa a memória da TV recarregando o painel às 03:00 AM
     setInterval(() => {
         const dataReload = new Date();
         if (dataReload.getHours() === 3 && dataReload.getMinutes() === 0) {
@@ -410,35 +653,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
     
-    // Atalho discreto para a página de administração de vídeos (Clique Duplo no Relógio)
     const relogio = document.querySelector('.header-relogio');
     if (relogio) {
         relogio.addEventListener('dblclick', (e) => {
-            e.stopPropagation(); // Impede de ativar o tela-cheia junto
+            e.stopPropagation(); 
             window.location.href = '/admin-videos.html';
         });
     }
     
-    // Botão de emergência no header
     const btnEmergencia = document.getElementById('btn-emergencia');
+    const btnExportarExcel = document.getElementById('btn-exportar-excel');
+    const btnExportarPdf = document.getElementById('btn-exportar-pdf');
     const overlayEmergencia = document.getElementById('emergencia-overlay');
     const fecharEmergencia = document.getElementById('fechar-emergencia');
-    const formEmergencia = document.getElementById('form-emergencia');
     const btnAdicionarManual = document.getElementById('btn-adicionar-manual');
     const btnLimparEmergencia = document.getElementById('btn-limpar-emergencia');
     const btnImportarArquivo = document.getElementById('btn-importar-arquivo');
     const inputArquivo = document.getElementById('arquivo-excel');
+
+    if (btnExportarExcel) {
+        btnExportarExcel.addEventListener('click', () => {
+            window.location.href = '/api/exportar/excel';
+        });
+    }
+
+    if (btnExportarPdf) {
+        btnExportarPdf.addEventListener('click', () => {
+            window.open('/imprimir-agenda.html?autoprint=1', '_blank');
+        });
+    }
     
-    // Abrir painel de emergência
     if (btnEmergencia) {
         btnEmergencia.addEventListener('click', () => {
             overlayEmergencia.classList.add('active');
             atualizarStatusEmergencia();
             
-            // Preencher data atual automaticamente
             const hoje = new Date();
             const tzOffset = hoje.getTimezoneOffset() * 60000;
-            const dataAtual = (new Date(hoje - tzOffset)).toISOString().slice(0, 16); // Formato YYYY-MM-DDTHH:MM local
+            const dataAtual = (new Date(hoje - tzOffset)).toISOString().slice(0, 16); 
             const inicioInput = document.getElementById('emergencia-inicio');
             if (inicioInput && !inicioInput.value) {
                 inicioInput.value = dataAtual;
@@ -446,31 +698,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
     
-    // Fechar painel de emergência
     if (fecharEmergencia) {
-        fecharEmergencia.addEventListener('click', () => {
-            overlayEmergencia.classList.remove('active');
-        });
+        fecharEmergencia.addEventListener('click', () => overlayEmergencia.classList.remove('active'));
     }
     
-    // Fechar ao clicar no overlay
     if (overlayEmergencia) {
         overlayEmergencia.addEventListener('click', (e) => {
-            if (e.target === overlayEmergencia) {
-                overlayEmergencia.classList.remove('active');
-            }
+            if (e.target === overlayEmergencia) overlayEmergencia.classList.remove('active');
         });
     }
     
-    // Event listeners para edição de emergência
-    let editandoIndex = -1;
     const editOverlay = document.getElementById('emergencia-edit-overlay');
     const editForm = document.getElementById('emergencia-edit-form');
     const btnEditCancelar = document.getElementById('btn-edit-cancelar');
     const btnEditExcluir = document.getElementById('btn-edit-excluir');
     const btnEditSalvar = document.getElementById('btn-edit-salvar');
     
-    // Clique em registros de emergência
     document.addEventListener('click', (e) => {
         const row = e.target.closest('.info-row--emergencia');
         if (row && row.hasAttribute('data-emergencia-index')) {
@@ -481,7 +724,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
     
-    // Fechar modal de edição
     if (btnEditCancelar) {
         btnEditCancelar.addEventListener('click', () => {
             editOverlay.classList.remove('active');
@@ -489,7 +731,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
     
-    // Fechar ao clicar no overlay de edição
     if (editOverlay) {
         editOverlay.addEventListener('click', (e) => {
             if (e.target === editOverlay) {
@@ -499,11 +740,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
     
-    // Salvar edição
     if (btnEditSalvar) {
-        btnEditSalvar.addEventListener('click', () => {
-            salvarEdicaoEmergencia();
-        });
+        btnEditSalvar.addEventListener('click', () => salvarEdicaoEmergencia());
     }
     
     if (editForm) {
@@ -513,7 +751,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
     
-    // Excluir entrada
     if (btnEditExcluir) {
         btnEditExcluir.addEventListener('click', () => {
             if (editandoIndex >= 0 && confirm('Tem certeza que deseja excluir esta entrada de emergência?')) {
@@ -528,7 +765,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
     
-    // Adicionar entrada manual
     if (btnAdicionarManual) {
         btnAdicionarManual.addEventListener('click', () => {
             const nome = document.getElementById('emergencia-nome').value.trim();
@@ -543,7 +779,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
             
-            // Processar foto se houver
             let foto = null;
             if (fotoInput.files && fotoInput.files[0]) {
                 const reader = new FileReader();
@@ -558,20 +793,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
     
-    // Limpar entradas de emergência
     if (btnLimparEmergencia) {
         btnLimparEmergencia.addEventListener('click', () => {
             if (confirm('Tem certeza que deseja limpar todas as entradas de emergência?')) {
                 emergencyEntradas = [];
                 salvarEntradasEmergencia();
-                buscarDados(); // Recarregar dados
+                buscarDados(); 
                 atualizarStatusEmergencia();
                 alert('Entradas de emergência limpas com sucesso!');
             }
         });
     }
     
-    // Importar arquivo
     if (btnImportarArquivo) {
         btnImportarArquivo.addEventListener('click', () => {
             if (!inputArquivo.files || !inputArquivo.files[0]) {
@@ -592,7 +825,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         return;
                     }
                     
-                    // Adicionar dados importados
                     dadosImportados.forEach(item => {
                         if (item.nome) {
                             emergencyEntradas.push({
@@ -608,7 +840,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     });
                     
                     salvarEntradasEmergencia();
-                    buscarDados(); // Recarregar dados
+                    buscarDados(); 
                     atualizarStatusEmergencia();
                     alert(`${dadosImportados.length} registros importados com sucesso!`);
                     
@@ -630,10 +862,9 @@ function adicionarEntradaEmergencia(dados) {
     });
     
     salvarEntradasEmergencia();
-    buscarDados(); // Recarregar dados
+    buscarDados(); 
     atualizarStatusEmergencia();
     
-    // Limpar formulário
     document.getElementById('emergencia-nome').value = '';
     document.getElementById('emergencia-sala').value = '';
     document.getElementById('emergencia-inicio').value = '';
@@ -643,11 +874,8 @@ function adicionarEntradaEmergencia(dados) {
     
     alert('Entrada de emergência adicionada com sucesso!');
     
-    // Fechar o painel de emergência
     const overlayEmergencia = document.getElementById('emergencia-overlay');
-    if (overlayEmergencia) {
-        overlayEmergencia.classList.remove('active');
-    }
+    if (overlayEmergencia) overlayEmergencia.classList.remove('active');
 }
 
 function abrirModalEdicao(index) {
@@ -656,14 +884,12 @@ function abrirModalEdicao(index) {
     const entrada = emergencyEntradas[index];
     editandoIndex = index;
     
-    // Preencher formulário
     document.getElementById('edit-nome').value = entrada.nome || '';
     document.getElementById('edit-sala').value = entrada.sala || '';
     document.getElementById('edit-inicio').value = entrada.data_inicio ? new Date(entrada.data_inicio).toISOString().slice(0, 16) : '';
     document.getElementById('edit-fim').value = entrada.data_fim ? new Date(entrada.data_fim).toISOString().slice(0, 16) : '';
     document.getElementById('edit-destino').value = entrada.destino || '';
     
-    // Abrir modal
     document.getElementById('emergencia-edit-overlay').classList.add('active');
 }
 
@@ -681,21 +907,15 @@ function salvarEdicaoEmergencia() {
         return;
     }
     
-    // Atualizar entrada
     emergencyEntradas[editandoIndex] = {
         ...emergencyEntradas[editandoIndex],
-        nome,
-        sala,
-        data_inicio: inicio,
-        data_fim: fim,
-        destino
+        nome, sala, data_inicio: inicio, data_fim: fim, destino
     };
     
     salvarEntradasEmergencia();
     buscarDados();
     atualizarStatusEmergencia();
     
-    // Fechar modal
     document.getElementById('emergencia-edit-overlay').classList.remove('active');
     editandoIndex = -1;
     
@@ -709,12 +929,8 @@ function atualizarStatusEmergencia() {
     if (timestampEl) {
         const agora = new Date();
         timestampEl.textContent = agora.toLocaleString('pt-BR', { 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit', 
-            day: '2-digit', 
-            month: '2-digit', 
-            year: 'numeric' 
+            hour: '2-digit', minute: '2-digit', second: '2-digit', 
+            day: '2-digit', month: '2-digit', year: 'numeric' 
         });
     }
     
@@ -723,17 +939,14 @@ function atualizarStatusEmergencia() {
     }
 }
 
-// --- FUNÇÃO DE TELA CHEIA (DOUBLE CLICK) ---
 document.addEventListener('dblclick', () => {
     if (!document.fullscreenElement) {
-        // Se não estiver em tela cheia, entra
-        document.documentElement.requestFullscreen().catch((err) => {
+        document.documentElement.requestFullscreen().catch((err) => { 
             console.warn(`Erro ao tentar ativar tela cheia: ${err.message}`);
         });
     } else {
-        // Se já estiver em tela cheia, sai
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        }
+        if (document.exitFullscreen) document.exitFullscreen();
     }
 });
+
+

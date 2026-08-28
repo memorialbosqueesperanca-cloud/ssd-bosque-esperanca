@@ -21,7 +21,7 @@ function atualizarDataHora() {
     const title = document.querySelector('.header-title');
     const clock = document.querySelector('.header-clock');
 
-    if (title) title.textContent = `${dataFormatada} Segunda-Feira`;
+    if (title) title.textContent = `${dataFormatada} ${agora.toLocaleDateString('pt-BR', { weekday: 'long' })}`;
     if (clock) clock.textContent = horaFormatada;
 }
 
@@ -55,27 +55,32 @@ function atualizarInterface() {
     const salaStatus = document.getElementById('salaStatus');
     const salaFileName = document.getElementById('salaFileName');
 
-    if (state.hall) {
-        hallPreview.innerHTML = createVideoPreview(state.hall);
-        hallStatus.textContent = 'Carregado';
-        hallFileName.textContent = state.hall.split('/').pop();
-    } else {
-        hallPreview.textContent = 'Nenhum vídeo carregado';
-        hallStatus.textContent = 'Sem vídeo';
-        hallFileName.textContent = '-';
+    if (hallPreview) {
+        if (state.hall) {
+            hallPreview.innerHTML = createVideoPreview(state.hall);
+            if (hallStatus) hallStatus.textContent = 'Carregado';
+            if (hallFileName) hallFileName.textContent = state.hall.split('/').pop();
+        } else {
+            hallPreview.textContent = 'Nenhum vídeo carregado';
+            if (hallStatus) hallStatus.textContent = 'Sem vídeo';
+            if (hallFileName) hallFileName.textContent = '-';
+        }
     }
 
-    if (state.sala) {
-        salaPreview.innerHTML = createVideoPreview(state.sala);
-        salaStatus.textContent = 'Carregado';
-        salaFileName.textContent = state.sala.split('/').pop();
-    } else {
-        salaPreview.textContent = 'Nenhum vídeo carregado';
-        salaStatus.textContent = 'Sem vídeo';
-        salaFileName.textContent = '-';
+    if (salaPreview) {
+        if (state.sala) {
+            salaPreview.innerHTML = createVideoPreview(state.sala);
+            if (salaStatus) salaStatus.textContent = 'Carregado';
+            if (salaFileName) salaFileName.textContent = state.sala.split('/').pop();
+        } else {
+            salaPreview.textContent = 'Nenhum vídeo carregado';
+            if (salaStatus) salaStatus.textContent = 'Sem vídeo';
+            if (salaFileName) salaFileName.textContent = '-';
+        }
     }
 }
 
+// Carrega configuração do backend
 async function carregarConfiguracao() {
     try {
         const response = await fetch(API_VIDEO_CONFIG);
@@ -90,8 +95,9 @@ async function carregarConfiguracao() {
     }
 }
 
+// Upload de vídeo
 async function uploadVideo(tipo, file) {
-    if (!file.type.startsWith('video/')) {
+    if (!file || !file.type || !file.type.startsWith('video/')) {
         mostrarNotificacao('Por favor, selecione um arquivo de vídeo.', 'error');
         return;
     }
@@ -119,6 +125,7 @@ async function uploadVideo(tipo, file) {
     }
 }
 
+// Salva configuração
 async function salvarConfiguracao() {
     try {
         const response = await fetch(API_VIDEO_CONFIG, {
@@ -139,6 +146,7 @@ async function salvarConfiguracao() {
     }
 }
 
+// Inicializa eventos de UI
 function inicializarEventos() {
     const hallInput = document.getElementById('hallInput');
     const salaInput = document.getElementById('salaInput');
@@ -146,38 +154,54 @@ function inicializarEventos() {
     const salaDropZone = document.getElementById('salaDropZone');
     const hallButton = document.getElementById('hallSelectButton');
     const salaButton = document.getElementById('salaSelectButton');
+    const btnSave = document.getElementById('btnSaveConfig');
 
-    hallButton.addEventListener('click', () => hallInput.click());
-    salaButton.addEventListener('click', () => salaInput.click());
+    if (hallButton && hallInput) {
+        hallButton.addEventListener('click', () => hallInput.click());
+    }
 
-    hallInput.addEventListener('change', async (event) => {
-        const file = event.target.files[0];
-        if (file) await uploadVideo('hall', file);
-    });
+    if (salaButton && salaInput) {
+        salaButton.addEventListener('click', () => salaInput.click());
+    }
 
-    salaInput.addEventListener('change', async (event) => {
-        const file = event.target.files[0];
-        if (file) await uploadVideo('sala', file);
-    });
+    if (hallInput) {
+        hallInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (file) await uploadVideo('hall', file);
+        });
+    }
 
-    hallDropZone.addEventListener('dragover', (event) => event.preventDefault());
-    salaDropZone.addEventListener('dragover', (event) => event.preventDefault());
+    if (salaInput) {
+        salaInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (file) await uploadVideo('sala', file);
+        });
+    }
 
-    hallDropZone.addEventListener('drop', async (event) => {
-        event.preventDefault();
-        const file = event.dataTransfer.files[0];
-        if (file) await uploadVideo('hall', file);
-    });
+    if (hallDropZone) {
+        hallDropZone.addEventListener('dragover', (event) => event.preventDefault());
+        hallDropZone.addEventListener('drop', async (event) => {
+            event.preventDefault();
+            const file = event.dataTransfer.files[0];
+            if (file) await uploadVideo('hall', file);
+        });
+    }
 
-    salaDropZone.addEventListener('drop', async (event) => {
-        event.preventDefault();
-        const file = event.dataTransfer.files[0];
-        if (file) await uploadVideo('sala', file);
-    });
+    if (salaDropZone) {
+        salaDropZone.addEventListener('dragover', (event) => event.preventDefault());
+        salaDropZone.addEventListener('drop', async (event) => {
+            event.preventDefault();
+            const file = event.dataTransfer.files[0];
+            if (file) await uploadVideo('sala', file);
+        });
+    }
 
-    document.getElementById('btnSaveConfig').addEventListener('click', salvarConfiguracao);
+    if (btnSave) {
+        btnSave.addEventListener('click', salvarConfiguracao);
+    }
 }
 
+// Inicialização
 function init() {
     atualizarDataHora();
     setInterval(atualizarDataHora, 1000);

@@ -1,0 +1,112 @@
+{
+  "data_referencia": "2026-08-03",
+  "total_registros": 10,
+  "total_valor": 23595.9,
+  "por_status": {
+    "Em Aberto": 3,
+    "Arquivado": 7
+  },
+  "por_origem": {
+    "Sem origem": 3,
+    "CEMITÉRIO DA PAZ": 1,
+    "FUNERÁRIAS TERCEIRAS": 1,
+    "HOSPITAL": 3,
+    "PET - CLÍNICAS": 2
+  },
+  "top_clientes": [
+    {
+      "nome_cliente": "EVARINA CUSTODIA DE SOUZA",
+      "valor_total": 7923,
+      "status": "Arquivado",
+      "atendimento": "2026-08-03T00:02:53.563"
+    },
+    {
+      "nome_cliente": "MARIA JOSE DE OLIVEIRA SOUZA",
+      "valor_total": 6323,
+      "status": "Arquivado",
+      "atendimento": "2026-08-03T01:14:55.897"
+    },
+    {
+      "nome_cliente": "VANIA MARA SILVA E SOUSA",
+      "valor_total": 4700,
+      "status": "Arquivado",
+      "atendimento": "2026-08-03T14:14:37.037"
+    },
+    {
+      "nome_cliente": "NILSON SANTOS DE CARVALHO",
+      "valor_total": 2255,
+      "status": "Arquivado",
+      "atendimento": "2026-08-03T01:06:33.21"
+    },
+    {
+      "nome_cliente": "ROSANA MARIA COSTA FARIAS",
+      "valor_total": 1565,
+      "status": "Em Aberto",
+      "atendimento": "2026-08-03T10:22:24.32"
+    },
+    {
+      "nome_cliente": "ANA PAULA DE MELO",
+      "valor_total": 500,
+      "status": "Arquivado",
+      "atendimento": "2026-08-03T11:50:36.723"
+    },
+    {
+      "nome_cliente": "GRAYCE SOARES DRUMMOND COELHO",
+      "valor_total": 300,
+      "status": "Arquivado",
+      "atendimento": "2026-08-03T11:28:22.273"
+    },
+    {
+      "nome_cliente": "CARLA ZENITH FERREIRA",
+      "valor_total": 29.9,
+      "status": "Arquivado",
+      "atendimento": "2026-08-03T12:42:25.523"
+    },
+    {
+      "nome_cliente": "GABRIELLE HELENA DA SILVA",
+      "valor_total": 0,
+      "status": "Em Aberto",
+      "atendimento": "2026-08-03T04:50:29.3"
+    },
+    {
+      "nome_cliente": "FABIO HILARIO SOARES CARDOSO",
+      "valor_total": 0,
+      "status": "Em Aberto",
+      "atendimento": "2026-08-03T13:50:32.58"
+    }
+  ],
+  "cruzamento_bubble": {
+    "bubble_fields": [
+      "nome",
+      "sala",
+      "foto",
+      "destino",
+      "data_inicio",
+      "data_fim"
+    ],
+    "mapeamento": {
+      "nome": [
+        "nome_cliente",
+        "nome_falecido"
+      ],
+      "sala": [
+        "nome_ponto_atendimento",
+        "estacao_trabalho"
+      ],
+      "foto": [
+        "não disponível no dataset atual"
+      ],
+      "destino": [
+        "nome_destino",
+        "tipo_contrato_relacionado_1",
+        "nome_indicacao"
+      ],
+      "data_inicio": [
+        "atendimento"
+      ],
+      "data_fim": [
+        "atendimento (estimado como 1h após o início)"
+      ]
+    }
+  }
+}

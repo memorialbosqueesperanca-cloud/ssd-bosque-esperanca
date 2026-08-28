@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Diária - Bosque da Esperança</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #2D3748;
+            background: #F7FAFC;
+            padding: 24px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #FFFFFF;
+            padding: 32px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #E2E8F0;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+        }
+        .header-logo { height: 50px; object-fit: contain; }
+        .header-title-box { text-align: right; }
+        .header-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #01813D;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .header-date {
+            font-size: 13px;
+            color: #718096;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+        .actions-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: #01813D;
+            color: #FFFFFF;
+            border: none;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: background 0.2s ease;
+        }
+        .btn:hover { background: #01622e; }
+        .btn-secondary { background: #4A5568; }
+        .btn-secondary:hover { background: #2D3748; }
+        .resumo-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .card-resumo {
+            background: #EDF2F7;
+            padding: 12px 16px;
+            border-radius: 6px;
+            border-left: 4px solid #01813D;
+        }
+        .card-resumo__num {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1A202C;
+        }
+        .card-resumo__label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #718096;
+            text-transform: uppercase;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        thead th {
+            background: #01813D;
+            color: #FFFFFF;
+            text-align: left;
+            padding: 10px 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+        tbody tr { border-bottom: 1px solid #E2E8F0; }
+        tbody tr:nth-child(even) { background: #F7FAFC; }
+        tbody td {
+            padding: 9px 8px;
+            vertical-align: middle;
+        }
+        .col-num { width: 30px; text-align: center; font-weight: 700; color: #718096; }
+        .col-nome { font-weight: 700; color: #1A202C; }
+        .badge-sala {
+            display: inline-block;
+            background: #E2E8F0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-tipo { font-size: 11px; color: #4A5568; font-weight: 600; }
+        .badge-status {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .status-previsto { background: #EBF8FF; color: #2B6CB0; }
+        .status-andamento { background: #C6F6D5; color: #22543D; }
+        .status-encerrado { background: #EDF2F7; color: #718096; }
+        .footer-print {
+            margin-top: 32px;
+            text-align: center;
+            font-size: 11px;
+            color: #A0AEC0;
+            border-top: 1px solid #E2E8F0;
+            padding-top: 12px;
+        }
+        @media print {
+            body { background: #FFFFFF; padding: 0; }
+            .container { box-shadow: none; padding: 0; max-width: 100%; }
+            .actions-bar { display: none !important; }
+            thead th {
+                background: #01813D !important;
+                color: #FFFFFF !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            tbody tr:nth-child(even) {
+                background: #F7FAFC !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <img src="https://a55c4e00bd65da15c47b354c25624391.cdn.bubble.io/cdn-cgi/image/w=256,h=82,f=auto,dpr=1.25,fit=contain/f1751377738848x350108495660364160/WhatsApp_Image_2025-07-01_at_10.17.57__1_-removebg-preview.png" class="header-logo" alt="Bosque da Esperança">
+            <div class="header-title-box">
+                <h1 class="header-title">Agenda Geral de Cerimônias</h1>
+                <div class="header-date" id="data-emissao">Carregando data...</div>
+            </div>
+        </header>
+
+        <div class="actions-bar">
+            <button class="btn" onclick="window.print()">Imprimir / Salvar em PDF</button>
+            <a class="btn btn-secondary" href="/api/exportar/excel" download>Baixar em Excel (.xlsx)</a>
+        </div>
+
+        <div class="resumo-cards">
+            <div class="card-resumo">
+                <div class="card-resumo__num" id="total-servicos">0</div>
+                <div class="card-resumo__label">Total de Serviços</div>
+            </div>
+            <div class="card-resumo">
+                <div class="card-resumo__num" id="total-velorios">0</div>
+                <div class="card-resumo__label">Velórios</div>
+            </div>
+            <div class="card-resumo">
+                <div class="card-resumo__num" id="total-cremacoes">0</div>
+                <div class="card-resumo__label">Cremações</div>
+            </div>
+            <div class="card-resumo">
+                <div class="card-resumo__num" id="total-sepultamentos">0</div>
+                <div class="card-resumo__label">Sepultamentos Diretos</div>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-num">Nº</th>
+                    <th>Homenageado</th>
+                    <th>Sala</th>
+                    <th>Tipo de Serviço</th>
+                    <th>Horário</th>
+                    <th>Local / Quadra</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-corpo">
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 24px; color: #718096;">Carregando serviços do dia...</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <footer class="footer-print">
+            Bosque da Esperança Parque Renascer • Relatório gerado automaticamente pelo Sistema de Sinalização Digital (SSD)
+        </footer>
+    </div>
+
+    <script>
+        const mapaNomesQuadras = {
+            'PAIN II': 'PAINEIRAS II', 'PAIN': 'PAINEIRAS', 'PAINEIRAS II': 'PAINEIRAS II', 'PAINEIRAS': 'PAINEIRAS',
+            'FLAMBOY': 'FLAMBOYANT', 'FLAMBOYANT': 'FLAMBOYANT', 'BOUN': 'BOUGAINVILLE', 'BOUGAINVILLE': 'BOUGAINVILLE',
+            'ANGICO': 'ANGICO', 'ACACIA': 'ACÁCIA', 'ACÁCIA': 'ACÁCIA', 'HIBISCO': 'HIBISCO',
+            'IPÊ': 'IPÊ', 'IPE': 'IPÊ', 'FICUS': 'FICUS', 'ANGELIM': 'ANGELIM',
+            'BURITIS': 'BURITIS', 'MANACA': 'MANACÁ', 'MANACÁ': 'MANACÁ', 'MAGNOLIA': 'MAGNÓLIA', 'MAGNÓLIA': 'MAGNÓLIA'
+        };
+
+        function formatarDestino(destinoRaw, tipoServico) {
+            let s = destinoRaw ? String(destinoRaw).trim() : '';
+            if (!s || s === 'Consulte a ACM' || s === 'Consulte a recepção' || s === 'Direto' || s === '-' || s === 'null' || s === 'N/D') {
+                if (tipoServico && String(tipoServico).toUpperCase().includes('CREMA')) return 'Cremação';
+                return 'Consulte a ACM';
+            }
+            if (/crema[çc][ãa]o/i.test(s)) return 'Cremação';
+            if (s.includes('QD:')) {
+                const matchQd = s.match(/QD:\s*([^.\n]+)/i);
+                if (matchQd) {
+                    let qd = matchQd[1].trim().replace(/^\d+-/, '').trim().toUpperCase();
+                    return mapaNomesQuadras[qd] || qd;
+                }
+            }
+            if (/jazigo/i.test(s) || /quadra/i.test(s)) {
+                let parte = s;
+                if (/jazigo/i.test(parte)) parte = parte.split(/jazigo/i)[0].replace(/[-–\s]+$/, '');
+                if (/quadra/i.test(parte)) parte = parte.replace(/^.*quadra\s*/i, '');
+                let qd = parte.trim().replace(/^\d+-/, '').trim().toUpperCase();
+                return mapaNomesQuadras[qd] || qd;
+            }
+            const upper = s.toUpperCase();
+            return mapaNomesQuadras[upper] || s;
+        }
+
+        function formatarHoraUniversal(str) {
+            if (!str) return '--:--';
+            const s = String(str).trim();
+            if (s.endsWith('Z')) {
+                return new Date(s).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+            }
+            const limpo = s.replace(/\.\d+$/, '');
+            return limpo.includes('T') ? limpo.split('T')[1].slice(0, 5) : limpo.slice(0, 5);
+        }
+
+        function calcularStatus(dataInicio, dataFim) {
+            if (!dataInicio && !dataFim) {
+                return { texto: 'Agendado', class: 'status-previsto' };
+            }
+            const agora = new Date();
+            const fim = dataFim ? new Date(dataFim) : null;
+            const ini = dataInicio ? new Date(dataInicio) : null;
+
+            if (fim && agora > fim) {
+                return { texto: 'Encerrado', class: 'status-encerrado' };
+            }
+            if (fim && (fim - agora) <= 30 * 60 * 1000 && agora <= fim) {
+                return { texto: 'Encerrando', class: 'status-andamento' };
+            }
+            if (ini && agora >= ini) {
+                return { texto: 'Em andamento', class: 'status-andamento' };
+            }
+            return { texto: 'Previsto', class: 'status-previsto' };
+        }
+
+        async function carregarRelatorio() {
+            try {
+                const hoje = new Date();
+                document.getElementById('data-emissao').innerText = 'Emissão: ' + hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }) + ' às ' + hoje.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+                const res = await fetch('/api/hall');
+                if (!res.ok) throw new Error('Erro ao carregar dados');
+                const lista = await res.json();
+
+                const corpo = document.getElementById('tabela-corpo');
+                const listaValida = (Array.isArray(lista) ? lista : []).filter(item => {
+                    const tipo = String(item.tipo_servico || '').toUpperCase();
+                    const dest = String(item.destino || '').toUpperCase();
+                    const salaRaw = item.sala ? String(item.sala).trim().toLowerCase() : '';
+                    const ehSemSala = !salaRaw || salaRaw === 'direto' || salaRaw === 'n/d' || salaRaw === '-' || salaRaw === 'null';
+
+                    const ehCremacao = tipo.includes('CREMA') || dest.includes('CREMA');
+                    const ehVelorio = tipo.includes('VELÓRIO') || (!ehSemSala && item.id_memorial);
+
+                    if (ehCremacao && ehSemSala && !ehVelorio) {
+                        return false;
+                    }
+                    return true;
+                });
+
+                if (listaValida.length === 0) {
+                    corpo.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 24px;">Nenhum serviço agendado para hoje.</td></tr>';
+                    return;
+                }
+
+                // Ordenação idêntica ao painel principal
+                const ordemStatus = { 'Encerrando': 0, 'Em andamento': 1, 'Previsto': 2, 'Encerrado': 3 };
+                listaValida.sort((a, b) => {
+                    const sa = calcularStatus(a.data_inicio, a.data_fim).texto;
+                    const sb = calcularStatus(b.data_inicio, b.data_fim).texto;
+                    const statusDiff = (ordemStatus[sa] ?? 99) - (ordemStatus[sb] ?? 99);
+                    if (statusDiff !== 0) return statusDiff;
+
+                    const inicioA = new Date(a.data_inicio).getTime();
+                    const inicioB = new Date(b.data_inicio).getTime();
+                    return inicioA - inicioB;
+                });
+
+                corpo.innerHTML = '';
+                let velorios = 0, cremacoes = 0, sepultamentos = 0;
+
+                listaValida.forEach((item, index) => {
+                    const tipoUpper = String(item.tipo_servico || '').toUpperCase();
+                    const destUpper = String(item.destino || '').toUpperCase();
+                    const salaRaw = item.sala ? String(item.sala).trim() : '';
+                    const salaLower = salaRaw.toLowerCase();
+                    const ehSemSala = !salaRaw || salaRaw === '-' || salaLower === 'n/d' || salaRaw === 'null' || salaLower === 'direto';
+
+                    const ehCremacao = tipoUpper.includes('CREMA') || destUpper.includes('CREMA');
+                    const ehVelorio = tipoUpper.includes('VELÓRIO') || !ehSemSala;
+
+                    if (ehVelorio) velorios++;
+                    if (ehCremacao) cremacoes++;
+                    if (ehSemSala && !ehCremacao) sepultamentos++;
+
+                    const horaIni = formatarHoraUniversal(item.data_inicio);
+                    const horaFim = formatarHoraUniversal(item.data_fim);
+                    const horarioTexto = `${horaIni} às ${horaFim}`;
+
+                    let salaFormatada = 'Direto';
+                    if (salaRaw && salaRaw !== '-' && salaLower !== 'n/d' && salaRaw !== 'null') {
+                        if (salaLower.includes('imersiva')) {
+                            salaFormatada = 'Imersiva';
+                        } else if (salaRaw === '3' || salaLower === 'sala 3') {
+                            salaFormatada = 'Sala 3';
+                        } else if (salaLower.includes('sala') || salaLower.includes('direto')) {
+                            salaFormatada = salaRaw;
+                        } else {
+                            salaFormatada = `Sala ${salaRaw}`;
+                        }
+                    }
+
+                    const status = calcularStatus(item.data_inicio, item.data_fim);
+                    const destinoTexto = formatarDestino(item.destino, item.tipo_servico);
+
+                    let tipoExibicao = item.tipo_servico || 'VELÓRIO';
+                    if (ehCremacao && ehVelorio) {
+                        tipoExibicao = 'VELÓRIO (CREMAÇÃO)';
+                    } else if (ehCremacao && ehSemSala) {
+                        tipoExibicao = 'CREMAÇÃO';
+                    }
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="col-num">${index + 1}</td>
+                        <td class="col-nome">${item.nome || 'Homenageado'}</td>
+                        <td class="col-sala"><span class="badge-sala">${salaFormatada}</span></td>
+                        <td><span class="badge-tipo">${tipoExibicao}</span></td>
+                        <td><strong>${horarioTexto}</strong></td>
+                        <td><strong>${destinoTexto}</strong></td>
+                        <td><span class="badge-status ${status.class}">${status.texto}</span></td>
+                    `;
+                    corpo.appendChild(tr);
+                });
+
+                document.getElementById('total-servicos').innerText = listaValida.length;
+                document.getElementById('total-velorios').innerText = velorios;
+                document.getElementById('total-cremacoes').innerText = cremacoes;
+                document.getElementById('total-sepultamentos').innerText = sepultamentos;
+
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('autoprint') === '1') {
+                    setTimeout(() => window.print(), 600);
+                }
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', carregarRelatorio);
+    </script>
+</body>
+</html>

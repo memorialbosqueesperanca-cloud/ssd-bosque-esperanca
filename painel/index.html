@@ -26,15 +26,28 @@
 
         <main class="painel-main" id="painel-corpo"></main>
         
-        <!-- Botão de emergência discreto na parte inferior -->
-        <button id="btn-emergencia" class="botao-emergencia-discreto" type="button" title="Painel de Emergência" aria-label="Abrir painel de emergência">
-            entrada manual
-        </button>
+        <!-- Rodapé do Painel: Paginação posicionada acima dos botões discretos -->
+        <footer class="painel-rodape-unificado">
+            <div id="indicador-paginacao" class="indicador-paginacao"></div>
+            <div class="utilitarios-rodape-discretos">
+                <button id="btn-emergencia" class="botao-rodape-discreto" type="button" title="Painel de Emergência" aria-label="Abrir painel de emergência">
+                    entrada manual
+                </button>
+                <span class="separador-discreto">•</span>
+                <button id="btn-exportar-excel" class="botao-rodape-discreto" type="button" title="Baixar Agenda em Excel (.xlsx)">
+                    baixar excel
+                </button>
+                <span class="separador-discreto">•</span>
+                <button id="btn-exportar-pdf" class="botao-rodape-discreto" type="button" title="Baixar / Imprimir Agenda em PDF">
+                    baixar pdf
+                </button>
+            </div>
+        </footer>
     </div>
 
     <div id="video-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:black; z-index:9999;">
-        <video id="meuVideo" style="width: 100%; height: 100%; object-fit: cover;" muted>
-            <source id="meuVideoSource" src="" type="video/mp4">
+        <video id="meuVideo" style="width: 100%; height: 100%; object-fit: cover;" muted playsinline preload="none">
+            <source id="meuVideoSource" type="video/mp4">
         </video>
     </div>
 
