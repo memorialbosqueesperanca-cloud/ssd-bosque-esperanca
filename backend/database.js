@@ -243,7 +243,17 @@ function salvarEventosIntuo(registrosIntuo, dataReferencia) {
                     }
                 } else if (rawTipo.includes('CREMAÇÃO') || servicoNome.includes('CREMAÇÃO')) {
                     tipoFinal = 'CREMAÇÃO';
-                    salaFinal = 'Direto';
+                    const textoGeral = `${recurso} ${servicoNome} ${rawTipo} ${item.ch_nome_grupo_serviço || ''} ${item.ch_descrição || ''} ${item.ch_observações || ''}`;
+                    const match = textoGeral.match(/sala\s*0?(\d+)/i);
+                    if (match) {
+                        salaFinal = match[1];
+                    } else if (textoGeral.toUpperCase().includes('IMERSIVA')) {
+                        salaFinal = '3';
+                    } else if (recurso && !recurso.toUpperCase().includes('CREMATÓRIO') && recurso !== 'N/D' && recurso !== '-' && !recurso.toUpperCase().includes('LOCALIZAÇÃO')) {
+                        salaFinal = recurso.replace(/SALA\s*/i, '').trim();
+                    } else {
+                        salaFinal = 'Direto';
+                    }
                     destinoFinal = 'Cremação';
                 }
 
@@ -398,17 +408,17 @@ function executarCruzamentoSQLite(dataReferencia) {
             db.all("SELECT * FROM intuo_eventos WHERE status != 'Cancelado'", [], (errIntuo, intuos) => {
                 if (errIntuo) return reject(errIntuo);
 
-                // Filtra pelo dia no fuso do Brasil (aceita início, fim ou data_referencia)
+                // Filtra estritamente pelo dia do evento no fuso do Brasil (data_inicio ou data_fim)
                 const memoriaisDoDia = (memoriais || []).filter(m => {
                     const dtIni = extrairDataBrasil(m.data_inicio);
                     const dtFim = extrairDataBrasil(m.data_fim);
-                    return dtIni === dataRef || dtFim === dataRef || !m.data_inicio;
+                    return dtIni === dataRef || dtFim === dataRef;
                 });
 
                 const intuosDoDia = (intuos || []).filter(i => {
                     const dtIni = extrairDataBrasil(i.data_inicio);
                     const dtFim = extrairDataBrasil(i.data_fim);
-                    return dtIni === dataRef || dtFim === dataRef || i.data_referencia === dataRef;
+                    return dtIni === dataRef || dtFim === dataRef;
                 });
 
                 const mapaPorPessoa = new Map();
@@ -440,16 +450,20 @@ function executarCruzamentoSQLite(dataReferencia) {
                     });
                 });
 
-                // 2. Ordena Intuo: Velórios principais primeiro, depois Sepultamento/Cremação, depois buffet/apoio
+                // 2. Ordena Intuo: Velórios com salas numéricas primeiro, depois velórios gerais, depois Sepultamento/Cremação, depois buffet/apoio
                 const intuosOrdenados = [...intuosDoDia].sort((a, b) => {
                     const peso = (item) => {
                         let raw = {};
                         try { raw = JSON.parse(item.raw_json || '{}'); } catch(e) {}
                         const grupo = (raw.ch_nome_grupo_serviço || '').toUpperCase();
                         const tipo = (item.tipo_servico || '').toUpperCase();
-                        if (grupo.includes('VELÓRIO') || (item.sala_recurso && item.sala_recurso !== 'Direto')) return 1;
-                        if (grupo.includes('SEPULTAMENTO') || tipo.includes('SEPULTAMENTO') || tipo.includes('CREMA')) return 2;
-                        return 3;
+                        const recurso = String(item.sala_recurso || '').toUpperCase();
+                        const ehSalaNumerica = /sala\s*\d+|\b\d+\b/i.test(recurso) && !recurso.includes('IMERSIVA');
+                        
+                        if (ehSalaNumerica) return 1;
+                        if (grupo.includes('VELÓRIO') || (item.sala_recurso && item.sala_recurso !== 'Direto')) return 2;
+                        if (grupo.includes('SEPULTAMENTO') || tipo.includes('SEPULTAMENTO') || tipo.includes('CREMA')) return 3;
+                        return 4;
                     };
                     return peso(a) - peso(b);
                 });
@@ -471,14 +485,19 @@ function executarCruzamentoSQLite(dataReferencia) {
 
                     if (mapaPorPessoa.has(chave)) {
                         const reg = mapaPorPessoa.get(chave);
-                        reg.id_intuo = i.id_intuo;
-                        reg.origem_dados = 'CRUZADO (MEMORIAL + INTUO)';
+                        reg.id_intuo = i.id_intuo || reg.id_intuo;
+                        reg.origem_dados = reg.id_memorial ? 'CRUZADO (MEMORIAL + INTUO)' : 'INTUO';
 
                         if (ehVelorio) {
                             reg.tipo_servico = 'VELÓRIO';
+                            const salaAtualEhNumerica = /sala\s*\d+|\b\d+\b/i.test(String(reg.sala || '')) && !String(reg.sala || '').toUpperCase().includes('IMERSIVA');
+                            const novaSalaEhNumerica = /sala\s*\d+|\b\d+\b/i.test(String(i.sala_recurso || '')) && !String(i.sala_recurso || '').toUpperCase().includes('IMERSIVA');
+
                             if (i.sala_recurso && i.sala_recurso !== 'Direto') {
-                                reg.sala = i.sala_recurso;
-                                reg.sala_normalizada = normalizarSala(i.sala_recurso);
+                                if (!salaAtualEhNumerica || novaSalaEhNumerica || reg.sala === 'Direto') {
+                                    reg.sala = i.sala_recurso;
+                                    reg.sala_normalizada = normalizarSala(i.sala_recurso);
+                                }
                             }
                             if (i.data_inicio && (!reg.data_inicio || reg.origem_dados === 'INTUO')) {
                                 reg.data_inicio = i.data_inicio;

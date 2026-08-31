@@ -122,70 +122,37 @@ async function executarPainelSSD(dataEspecifica, forcarIntuo = true) {
             console.log(`📡 [SINCRONIZAÇÃO COMPLETA] Buscando dados da Intuo + Memorial para ${dataAtual}...`);
             // 1. Busca e salva dados da INTUO no SQLite (Janela de 3 dias para cobrir velórios contínuos)
             try {
-                const baseD = new Date(ano, mes - 1, dia);
-                const ontemStr = new Date(baseD.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-                const amanhaStr = new Date(baseD.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-                const dataIni = `'${ontemStr}'`;
-                const dataFim = `'${amanhaStr}'`;
+                const dataFormatadaIntuo = `'${dataAtual}'`;
 
-                const payloadIntuo = JSON.stringify({
+                const payloadIntuo = {
                     "idConsulta": 4885,
                     "usarNomenclaturaBancoDados": true,
                     "parametros": [
                         { "Item1": "ch_tipo_consulta", "Item2": "ALL" },
                         { "Item1": "ch_tipo_filtro_data", "Item2": "ALL" },
-                        { "Item1": "dt_inicial", "Item2": dataIni }, 
-                        { "Item1": "dt_final", "Item2": dataFim },   
+                        { "Item1": "dt_inicial", "Item2": dataFormatadaIntuo }, 
+                        { "Item1": "dt_final", "Item2": dataFormatadaIntuo },   
                         { "Item1": "ch_texto_pesquisa", "Item2": "" },
                         { "Item1": "nm_número_pesquisa", "Item2": "0" },
                         { "Item1": "nm_id_usuário", "Item2": "9" },
                         { "Item1": "nm_status", "Item2": "0" } 
                     ]
-                });
+                };
 
-                console.log(`📡 [INTUO] Consultando API da Intuo (Janela: ${ontemStr} a ${amanhaStr})...`);
+                console.log(`📡 [INTUO] Consultando API da Intuo para data ${dataAtual}...`);
 
                 async function buscarIntuoComRetry(payload, maxTentativas = 3) {
                     for (let tentativa = 1; tentativa <= maxTentativas; tentativa++) {
                         try {
-                            return await new Promise((resolve, reject) => {
-                                const req = https.request({
-                                    hostname: 'api-bosquedaesperanca.intuo.app',
-                                    port: 443,
-                                    path: '/iVertexServices/DataAdminDIO/ObterDadosConsulta',
-                                    method: 'POST',
-                                    agent: false,
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Authorization': '7E30CE1DC3D202B0B9A2841694D3EDB44FB7C8',
-                                        'token': '7E30CE1DC3D202B0B9A2841694D3EDB44FB7C8',
-                                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                                        'Connection': 'close',
-                                        'Content-Length': Buffer.byteLength(payload)
-                                    },
-                                    timeout: 120000
-                                }, res => {
-                                    let chunks = [];
-                                    res.on('data', c => chunks.push(c));
-                                    res.on('end', () => {
-                                        try {
-                                            const json = JSON.parse(Buffer.concat(chunks).toString('utf-8'));
-                                            resolve(json.ResponseData || []);
-                                        } catch (err) {
-                                            reject(new Error('Falha ao processar resposta JSON da Intuo'));
-                                        }
-                                    });
-                                });
-
-                                req.on('error', reject);
-                                req.on('timeout', () => {
-                                    req.destroy();
-                                    reject(new Error('Timeout de requisição com a Intuo'));
-                                });
-
-                                req.write(payload);
-                                req.end();
+                            const resp = await axios.post('https://api-bosquedaesperanca.intuo.app/iVertexServices/DataAdminDIO/ObterDadosConsulta', payload, {
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'token': '7E30CE1DC3D202B0B9A2841694D3EDB44FB7C8',
+                                    'Authorization': '7E30CE1DC3D202B0B9A2841694D3EDB44FB7C8'
+                                },
+                                timeout: 60000
                             });
+                            return resp.data?.ResponseData || [];
                         } catch (err) {
                             if (tentativa === maxTentativas) throw err;
                             console.warn(`⚠️ [INTUO] Tentativa ${tentativa} falhou (${err.message}). Nova tentativa em 3s...`);
