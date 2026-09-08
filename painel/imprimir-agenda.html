@@ -345,10 +345,8 @@
 
                     let salaFormatada = 'Direto';
                     if (salaRaw && salaRaw !== '-' && salaLower !== 'n/d' && salaRaw !== 'null') {
-                        if (salaLower.includes('imersiva')) {
-                            salaFormatada = 'Imersiva';
-                        } else if (salaRaw === '3' || salaLower === 'sala 3') {
-                            salaFormatada = 'Sala 3';
+                        if (salaLower.includes('imersiva') || salaRaw === '3' || salaLower === 'sala 3') {
+                            salaFormatada = 'Sala Imersiva';
                         } else if (salaLower.includes('sala') || salaLower.includes('direto')) {
                             salaFormatada = salaRaw;
                         } else {

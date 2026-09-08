@@ -134,10 +134,8 @@ function renderizar(lista) {
         const salaLower = salaStr.toLowerCase();
         let sala = 'Direto';
         if (salaStr && salaStr !== '-' && salaLower !== 'n/d' && salaStr !== 'null') {
-            if (salaLower.includes('imersiva')) {
-                sala = 'Imersiva';
-            } else if (salaStr === '3' || salaLower === 'sala 3') {
-                sala = 'Sala 3';
+            if (salaLower.includes('imersiva') || salaStr === '3' || salaLower === 'sala 3') {
+                sala = 'Sala Imersiva';
             } else if (salaLower.includes('sala') || salaLower.includes('direto')) {
                 sala = salaStr;
             } else {

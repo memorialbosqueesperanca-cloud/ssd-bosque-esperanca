@@ -214,7 +214,6 @@ async function executarPainelSSD(dataEspecifica, forcarIntuo = true) {
                     headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` },
                     params: { 
                         constraints: JSON.stringify([
-                            { key: "visivel", constraint_type: "equals", value: true }, 
                             { key: "data_inicio", constraint_type: "less than", value: fimDoDia }, 
                             { key: "data_fim", constraint_type: "greater than", value: inicioDoDia }
                         ]) 
@@ -408,10 +407,8 @@ app.get('/api/exportar/excel', async (req, res) => {
             const salaLower = salaRaw.toLowerCase();
             let salaExibicao = 'Direto';
             if (salaRaw && salaRaw !== '-' && salaLower !== 'n/d' && salaRaw !== 'null') {
-                if (salaLower.includes('imersiva')) {
-                    salaExibicao = 'Imersiva';
-                } else if (salaRaw === '3' || salaLower === 'sala 3') {
-                    salaExibicao = 'Sala 3';
+                if (salaLower.includes('imersiva') || salaRaw === '3' || salaLower === 'sala 3') {
+                    salaExibicao = 'Sala Imersiva';
                 } else if (salaLower.includes('sala') || salaLower.includes('direto')) {
                     salaExibicao = salaRaw;
                 } else {
@@ -492,6 +489,10 @@ app.get('/api/sala/:id', async (req, res) => {
             data_inicio: evento.data_inicio,
             data_fim: evento.data_fim,
             data_fim_raw: evento.data_fim_raw || evento.data_fim,
+            id_memorial: evento.id_memorial || null,
+            qr_code_memorial: evento.qr_code_memorial || null,
+            link_memorial: evento.link_memorial || null,
+            velorio_online: evento.velorio_online || null,
             origem: evento.origem_dados
         });
     } catch (e) {

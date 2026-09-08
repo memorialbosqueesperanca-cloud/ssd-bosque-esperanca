@@ -44,6 +44,8 @@ function inicializarBanco() {
                     nome_falecido TEXT NOT NULL,
                     sala_cerimonia TEXT,
                     foto_url TEXT,
+                    qr_code_memorial TEXT,
+                    link_memorial TEXT,
                     local_sepultura TEXT,
                     data_inicio TEXT,
                     data_fim TEXT,
@@ -67,6 +69,8 @@ function inicializarBanco() {
                     sala TEXT,
                     sala_normalizada TEXT,
                     foto_url TEXT,
+                    qr_code_memorial TEXT,
+                    link_memorial TEXT,
                     destino TEXT,
                     tipo_servico TEXT,
                     data_inicio TEXT,
@@ -78,6 +82,14 @@ function inicializarBanco() {
                     atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             `);
+
+            // Migrações seguras caso o arquivo SQLite já exista
+            db.run(`ALTER TABLE memorial_eventos ADD COLUMN qr_code_memorial TEXT`, () => {});
+            db.run(`ALTER TABLE memorial_eventos ADD COLUMN link_memorial TEXT`, () => {});
+            db.run(`ALTER TABLE intuo_eventos ADD COLUMN velorio_online TEXT`, () => {});
+            db.run(`ALTER TABLE painel_consolidado ADD COLUMN qr_code_memorial TEXT`, () => {});
+            db.run(`ALTER TABLE painel_consolidado ADD COLUMN link_memorial TEXT`, () => {});
+            db.run(`ALTER TABLE painel_consolidado ADD COLUMN velorio_online TEXT`, () => {});
 
             db.run(`CREATE INDEX IF NOT EXISTS idx_intuo_data ON intuo_eventos(data_inicio, data_referencia)`);
             db.run(`CREATE INDEX IF NOT EXISTS idx_memorial_data ON memorial_eventos(data_inicio)`);
@@ -133,16 +145,16 @@ const mapaNomesQuadras = {
 
 function formatarLocalCemiterio(texto, tipoServico) {
     if (!texto) {
-        if (tipoServico && String(tipoServico).toUpperCase().includes('CREMA')) return 'Cremação';
-        return 'Consulte a ACM';
+        if (tipoServico && String(tipoServico).toUpperCase().includes('CREMA')) return 'CREMAÇÃO';
+        return 'CONSULTE A ADM';
     }
     let s = String(texto).trim();
-    if (/^sala\s*\d+/i.test(s) || s === 'N/D' || s === 'Direto' || s === '-' || s === 'null' || s === 'Consulte a recepção' || s === 'Consulte a ACM') {
-        if (tipoServico && String(tipoServico).toUpperCase().includes('CREMA')) return 'Cremação';
-        return 'Consulte a ACM';
+    if (/^sala\s*\d+/i.test(s) || s === 'N/D' || s === 'Direto' || s === '-' || s === '--' || s === 'null' || s === 'Consulte a recepção' || s === 'Consulte a ACM' || s === 'Consulte a ADM') {
+        if (tipoServico && String(tipoServico).toUpperCase().includes('CREMA')) return 'CREMAÇÃO';
+        return 'CONSULTE A ADM';
     }
     
-    if (/crema[çc][ãa]o/i.test(s)) return 'Cremação';
+    if (/crema[çc][ãa]o/i.test(s)) return 'CREMAÇÃO';
     
     // Formato Intuo completo: "CEM: BOSQUE . QD: 13-PAIN II . SQ: 13 . JAZ: 348 . GAV: 2"
     if (s.includes('QD:')) {
@@ -188,8 +200,8 @@ function salvarEventosIntuo(registrosIntuo, dataReferencia) {
                 INSERT INTO intuo_eventos (
                     id_intuo, protocolo, nome_falecido, tipo_servico,
                     sala_recurso, destino, data_inicio, data_fim,
-                    status, data_referencia, raw_json, atualizado_em
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    status, data_referencia, velorio_online, raw_json, atualizado_em
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ON CONFLICT(id_intuo) DO UPDATE SET
                     protocolo = excluded.protocolo,
                     nome_falecido = excluded.nome_falecido,
@@ -200,6 +212,7 @@ function salvarEventosIntuo(registrosIntuo, dataReferencia) {
                     data_fim = excluded.data_fim,
                     status = excluded.status,
                     data_referencia = excluded.data_referencia,
+                    velorio_online = excluded.velorio_online,
                     raw_json = excluded.raw_json,
                     atualizado_em = CURRENT_TIMESTAMP
             `);
@@ -222,23 +235,23 @@ function salvarEventosIntuo(registrosIntuo, dataReferencia) {
                 const recurso = String(item['ch_nome_recurso'] || item.sala || item.local || '');
 
                 let tipoFinal = rawTipo;
-                let salaFinal = 'Direto';
-                let destinoFinal = 'Consulte a ACM';
+                let salaFinal = 'DIRETO';
+                let destinoFinal = 'CONSULTE A ADM';
 
                 if (rawTipo.includes('INUMAÇÃO DIRETA') || servicoNome.includes('INUMAÇÃO DIRETA') || rawTipo.includes('SEPULTAMENTO DIRETO')) {
                     tipoFinal = 'SEPULTAMENTO DIRETO';
-                    salaFinal = 'Direto';
+                    salaFinal = 'DIRETO';
                     destinoFinal = formatarLocalCemiterio(recurso, tipoFinal);
                 } else if (rawTipo.includes('VELÓRIO')) {
                     tipoFinal = 'VELÓRIO';
                     salaFinal = recurso.replace(/SALA\s*/i, '').trim() || recurso;
-                    destinoFinal = 'Consulte a ACM';
+                    destinoFinal = 'CONSULTE A ADM';
                 } else if (rawTipo.includes('INUMAÇÃO') || rawTipo.includes('SEPULTAMENTO')) {
                     tipoFinal = 'SEPULTAMENTO';
                     if (/sala\s*\d+/i.test(recurso)) {
                         salaFinal = recurso.replace(/SALA\s*/i, '').trim();
                     } else {
-                        salaFinal = 'Direto';
+                        salaFinal = 'DIRETO';
                         destinoFinal = formatarLocalCemiterio(recurso, tipoFinal);
                     }
                 } else if (rawTipo.includes('CREMAÇÃO') || servicoNome.includes('CREMAÇÃO')) {
@@ -252,9 +265,29 @@ function salvarEventosIntuo(registrosIntuo, dataReferencia) {
                     } else if (recurso && !recurso.toUpperCase().includes('CREMATÓRIO') && recurso !== 'N/D' && recurso !== '-' && !recurso.toUpperCase().includes('LOCALIZAÇÃO')) {
                         salaFinal = recurso.replace(/SALA\s*/i, '').trim();
                     } else {
-                        salaFinal = 'Direto';
+                        salaFinal = 'DIRETO';
                     }
-                    destinoFinal = 'Cremação';
+                    destinoFinal = 'CREMAÇÃO';
+                }
+
+                // Identifica se há Velório On-line / Transmissão cadastrada na Intuo
+                let velorioOnline = null;
+                if (item.velorio_online && typeof item.velorio_online === 'string' && item.velorio_online.trim().length > 3) {
+                    velorioOnline = item.velorio_online.trim();
+                } else if (item.link_transmissao && typeof item.link_transmissao === 'string' && item.link_transmissao.trim().length > 3) {
+                    velorioOnline = item.link_transmissao.trim();
+                } else if (item.link_velorio_online && typeof item.link_velorio_online === 'string' && item.link_velorio_online.trim().length > 3) {
+                    velorioOnline = item.link_velorio_online.trim();
+                } else if (item.url_transmissao && typeof item.url_transmissao === 'string' && item.url_transmissao.trim().length > 3) {
+                    velorioOnline = item.url_transmissao.trim();
+                } else {
+                    const textoBusca = `${item.ch_observações || ''} ${item.ch_descrição || ''} ${item.ch_detalhes_painel || ''} ${item.ch_nome_serviço || ''} ${item.ch_nome_grupo_serviço || ''}`;
+                    const urlMatch = textoBusca.match(/https?:\/\/[^\s"'<>]+(?:adiau|transmissao|stream|aovivo|camera)[^\s"'<>]+/i);
+                    if (urlMatch) {
+                        velorioOnline = urlMatch[0];
+                    } else if (/vel[oó]rio\s*(?:on-?line|ao\s*vivo)|transmiss[aã]o\s*ao\s*vivo/i.test(textoBusca)) {
+                        velorioOnline = "https://www.adiau.com.br/embed/?hash=beFS6qSdk8HJKlKV5gqzYh93#!";
+                    }
                 }
 
                 const inicio = item['dt_previsão_início'] || item.data_inicio || item.horario_inicio || null;
@@ -272,6 +305,7 @@ function salvarEventosIntuo(registrosIntuo, dataReferencia) {
                     fim,
                     status,
                     dataRef,
+                    velorioOnline,
                     JSON.stringify(item)
                 );
             });
@@ -297,13 +331,16 @@ function salvarEventosMemorial(registrosMemorial, origem = 'bubble') {
             const stmt = db.prepare(`
                 INSERT INTO memorial_eventos (
                     id_memorial, nome_falecido, sala_cerimonia, foto_url,
-                    local_sepultura, data_inicio, data_fim, data_nascimento,
+                    qr_code_memorial, link_memorial, local_sepultura,
+                    data_inicio, data_fim, data_nascimento,
                     data_falecimento, origem, visivel, raw_json, atualizado_em
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ON CONFLICT(id_memorial) DO UPDATE SET
                     nome_falecido = excluded.nome_falecido,
                     sala_cerimonia = excluded.sala_cerimonia,
                     foto_url = excluded.foto_url,
+                    qr_code_memorial = excluded.qr_code_memorial,
+                    link_memorial = excluded.link_memorial,
                     local_sepultura = excluded.local_sepultura,
                     data_inicio = excluded.data_inicio,
                     data_fim = excluded.data_fim,
@@ -325,6 +362,13 @@ function salvarEventosMemorial(registrosMemorial, origem = 'bubble') {
                     foto = 'https:' + foto;
                 }
 
+                let qrMemorial = item.qrcode || item.qr_code || item.qrCode || null;
+                if (qrMemorial && typeof qrMemorial === 'string' && !qrMemorial.startsWith('data:') && !qrMemorial.startsWith('http')) {
+                    qrMemorial = 'data:image/png;base64,' + qrMemorial;
+                }
+
+                const linkMemorial = item.link_memorial || item.url || (item.Slug ? `https://memorialbosque.com.br/memorial/${item.Slug}` : (idMemorial ? `https://memorialbosque.com.br/memorial/${idMemorial}` : null));
+
                 const rawLocal = item['local da sepultura'] || item.destino || item.local_sepultura;
                 const localSepultura = formatarLocalCemiterio(rawLocal);
                 const inicio = item.data_inicio || item.hora_inicio || null;
@@ -336,6 +380,8 @@ function salvarEventosMemorial(registrosMemorial, origem = 'bubble') {
                     nome.trim(),
                     sala,
                     foto,
+                    qrMemorial,
+                    linkMemorial,
                     localSepultura,
                     inicio,
                     fim,
@@ -402,7 +448,7 @@ function executarCruzamentoSQLite(dataReferencia) {
     return new Promise((resolve, reject) => {
         const dataRef = dataReferencia || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
 
-        db.all('SELECT * FROM memorial_eventos WHERE visivel = 1', [], (errMem, memoriais) => {
+        db.all('SELECT * FROM memorial_eventos', [], (errMem, memoriais) => {
             if (errMem) return reject(errMem);
 
             db.all("SELECT * FROM intuo_eventos WHERE status != 'Cancelado'", [], (errIntuo, intuos) => {
@@ -439,6 +485,9 @@ function executarCruzamentoSQLite(dataReferencia) {
                         sala: salaMemorial,
                         sala_normalizada: normalizarSala(salaMemorial),
                         foto_url: m.foto_url,
+                        qr_code_memorial: m.qr_code_memorial,
+                        link_memorial: m.link_memorial,
+                        velorio_online: null,
                         destino: destinoMemorial,
                         tipo_servico: 'VELÓRIO',
                         data_inicio: m.data_inicio,
@@ -488,6 +537,10 @@ function executarCruzamentoSQLite(dataReferencia) {
                         reg.id_intuo = i.id_intuo || reg.id_intuo;
                         reg.origem_dados = reg.id_memorial ? 'CRUZADO (MEMORIAL + INTUO)' : 'INTUO';
 
+                        if (i.velorio_online) {
+                            reg.velorio_online = i.velorio_online;
+                        }
+
                         if (ehVelorio) {
                             reg.tipo_servico = 'VELÓRIO';
                             const salaAtualEhNumerica = /sala\s*\d+|\b\d+\b/i.test(String(reg.sala || '')) && !String(reg.sala || '').toUpperCase().includes('IMERSIVA');
@@ -530,6 +583,9 @@ function executarCruzamentoSQLite(dataReferencia) {
                             sala: ehDireto ? 'Direto' : i.sala_recurso,
                             sala_normalizada: ehDireto ? 'direto' : normalizarSala(i.sala_recurso),
                             foto_url: null,
+                            qr_code_memorial: null,
+                            link_memorial: null,
+                            velorio_online: i.velorio_online || null,
                             destino: destFinal,
                             tipo_servico: tipoServicoFinal,
                             data_inicio: i.data_inicio,
@@ -566,10 +622,10 @@ function executarCruzamentoSQLite(dataReferencia) {
                     const stmt = db.prepare(`
                         INSERT INTO painel_consolidado (
                             chave_cruzamento, id_intuo, id_memorial, nome_falecido,
-                            sala, sala_normalizada, foto_url, destino, tipo_servico,
+                            sala, sala_normalizada, foto_url, qr_code_memorial, link_memorial, velorio_online, destino, tipo_servico,
                             data_inicio, data_fim, data_nascimento, data_falecimento,
                             status_evento, origem_dados, atualizado_em
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                     `);
 
                     listaFinal.forEach(item => {
@@ -581,6 +637,9 @@ function executarCruzamentoSQLite(dataReferencia) {
                             item.sala,
                             item.sala_normalizada,
                             item.foto_url,
+                            item.qr_code_memorial,
+                            item.link_memorial,
+                            item.velorio_online,
                             item.destino,
                             item.tipo_servico,
                             item.data_inicio,
@@ -610,6 +669,10 @@ function obterEventosHall() {
                 nome_falecido AS nome,
                 sala,
                 foto_url AS foto,
+                id_memorial,
+                qr_code_memorial,
+                link_memorial,
+                velorio_online,
                 destino,
                 tipo_servico,
                 data_inicio,
@@ -634,6 +697,10 @@ function obterEventoPorSala(numeroSala, horaReferencia = new Date()) {
                 nome_falecido AS nome,
                 sala,
                 foto_url AS foto,
+                id_memorial,
+                qr_code_memorial,
+                link_memorial,
+                velorio_online,
                 destino,
                 tipo_servico,
                 data_inicio,

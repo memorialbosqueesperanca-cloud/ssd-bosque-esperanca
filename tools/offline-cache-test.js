@@ -25,7 +25,7 @@ function formatarHoraExibicao(str) {
     return limpo.slice(0, 5);
 }
 
-db.all("SELECT * FROM memorial_eventos WHERE visivel = 1", (errMem, memoriais) => {
+db.all("SELECT * FROM memorial_eventos", (errMem, memoriais) => {
     db.all("SELECT * FROM intuo_eventos WHERE status != 'Cancelado'", (errIntuo, intuos) => {
         const mapaPorPessoa = new Map();
 

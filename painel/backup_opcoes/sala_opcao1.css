@@ -1,29 +1,10 @@
 :root {
-    /* Paleta Bosque Acolhedor: Tons Terrosos, Pastel e Sálvia Nobre */
-    --cor-primaria: #2C5740;           /* Verde Musgo / Sálvia Nobre Acolhedor */
-    --cor-primaria-dark: #1B3829;      /* Verde Floresta Profundo */
-    --cor-primaria-light: #3D6F53;     /* Verde Sálvia Médio */
-    --cor-primaria-pastel: #EAF2EC;    /* Sálvia Pastel Suave */
-    
-    --cor-terrosa: #7A5C45;            /* Argila / Terra Nobre */
-    --cor-terrosa-dark: #4D3728;       /* Café / Madeira Quente */
-    --cor-terrosa-light: #F4EDE5;      /* Linho / Areia Pastel */
-    --cor-terrosa-borda: rgba(122, 92, 69, 0.22);
-
-    --cor-dourado: #C69B56;            /* Ouro Champagne Acetinado */
-    --cor-dourado-claro: #E8CA94;      /* Champagne Claro */
-    --cor-dourado-bg: rgba(198, 155, 86, 0.18);
-
-    --cor-fundo: #FAF7F2;              /* Linho / Areia Acolhedor */
-    --cor-fundo-card: #FFFFFF;         /* Branco Seda */
-    --cor-borda-suave: rgba(122, 92, 69, 0.15);
-
-    --cor-texto: #272C28;              /* Café Profundo / Carvão Quente */
-    --cor-texto-secundario: #68726A;   /* Sálvia Acinzentado */
-    --cor-texto-terroso: #7A5C45;      /* Tom Terroso de Leitura */
-
-    --sombra-card: 0 8px 24px rgba(44, 87, 64, 0.08);
-    --sombra-elevada: 0 12px 32px rgba(44, 87, 64, 0.12);
+    --cor-primaria: #01813D;
+    --cor-primaria-dark: #00632e;
+    --cor-dourado: #FAA507;
+    --cor-fundo: #ffffff;
+    --cor-texto: #1a202c;
+    --cor-texto-light: #718096;
 }
 
 *, *::before, *::after {
@@ -37,7 +18,7 @@ body, html {
     height: 100vh;
     overflow: hidden;
     background-color: var(--cor-fundo);
-    font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     color: var(--cor-texto);
     -webkit-font-smoothing: antialiased;
 }
@@ -49,7 +30,7 @@ body, html {
     overflow: hidden;
 }
 
-/* Camada de Papel de Parede Acolhedor */
+/* Camada de Papel de Parede */
 .sala-body::before {
     content: "";
     position: absolute;
@@ -58,10 +39,9 @@ body, html {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    opacity: 0.92;
+    opacity: 0.95;
     z-index: 0;
     pointer-events: none;
-    filter: saturate(0.85) sepia(0.08);
 }
 
 .bloco-tela {
@@ -79,21 +59,20 @@ body, html {
    1. BLOCO DE HOMENAGEM (VELÓRIO ATIVO)
    ========================================================================== */
 
-/* Cabeçalho da Sala (Verde Musgo Nobre com Linha Champagne) */
+/* Cabeçalho Padrão da Sala (Mesmo padrão do Hall - Encorpado / Gordinho) */
 .sala-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-primaria-dark) 100%);
+    background-color: var(--cor-primaria);
     color: #ffffff;
     padding: clamp(16px, 2.4vh, 30px) clamp(24px, 4.5vw, 56px);
     min-height: clamp(75px, 9vh, 105px);
     width: 100%;
     flex-shrink: 0;
-    box-shadow: 0 6px 20px rgba(27, 56, 41, 0.25);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
     position: relative;
     box-sizing: border-box;
-    border-bottom: 2.5px solid rgba(198, 155, 86, 0.45);
 }
 
 .sala-header__logo {
@@ -102,7 +81,6 @@ body, html {
     object-fit: contain;
     object-position: left center;
     flex-shrink: 0;
-    filter: brightness(1.05);
 }
 
 .sala-header__data {
@@ -110,13 +88,12 @@ body, html {
     font-size: clamp(15px, 2vh, 24px);
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
     margin: 0;
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
     white-space: nowrap;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .sala-header__relogio {
@@ -125,16 +102,13 @@ body, html {
     font-weight: 800;
     white-space: nowrap;
     flex-shrink: 0;
-    letter-spacing: 0.02em;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .faixa-verde {
-    height: clamp(16px, 2.2vh, 26px);
-    background: linear-gradient(90deg, var(--cor-primaria) 0%, var(--cor-primaria-light) 50%, var(--cor-primaria) 100%);
+    height: clamp(22px, 3vh, 36px);
+    background-color: var(--cor-primaria);
     width: 100%;
     flex-shrink: 0;
-    border-top: 1.5px solid rgba(198, 155, 86, 0.35);
 }
 
 .sala-main {
@@ -143,8 +117,8 @@ body, html {
     flex-direction: column;
     justify-content: space-evenly;
     align-items: center;
-    padding: clamp(8px, 1.5vh, 24px) clamp(20px, 4vw, 50px);
-    max-width: 920px;
+    padding: clamp(10px, 1.8vh, 28px) clamp(20px, 4vw, 50px);
+    max-width: 900px;
     margin: 0 auto;
     width: 100%;
     min-height: 0;
@@ -158,23 +132,20 @@ body, html {
     height: 100%;
     width: 100%;
     text-align: center;
-    padding: clamp(4px, 0.8vh, 10px) 0;
-    gap: clamp(6px, 1.1vh, 14px);
+    padding: clamp(4px, 0.8vh, 12px) 0;
+    gap: clamp(6px, 1.2vh, 16px);
 }
 
-/* Moldura da Foto do Homenageado (Tons Acolhedores e Ouro Champagne) */
+/* Foto do Homenageado */
 .foto-wrapper {
-    width: clamp(170px, 23vh, 290px);
-    height: clamp(170px, 23vh, 290px);
+    width: clamp(180px, 24vh, 300px);
+    height: clamp(180px, 24vh, 300px);
     border-radius: 50%;
     overflow: hidden;
     border: clamp(4px, 0.5vh, 6px) solid var(--cor-primaria);
-    outline: 2.5px solid var(--cor-dourado);
-    outline-offset: 3px;
-    background-color: var(--cor-terrosa-light);
-    box-shadow: 0 10px 30px rgba(44, 87, 64, 0.22);
+    background-color: #f0f4f1;
+    box-shadow: 0 10px 28px rgba(1, 129, 61, 0.2);
     flex-shrink: 0;
-    transition: transform 0.3s ease;
 }
 
 .foto-wrapper img {
@@ -184,13 +155,13 @@ body, html {
     object-position: center 15%;
 }
 
-/* Nome do Homenageado */
+/* Nome do Falecido */
 .nome-homenageado {
     color: var(--cor-primaria);
     font-size: clamp(26px, 3.4vh, 42px);
     font-weight: 800;
     text-transform: uppercase;
-    margin: clamp(4px, 0.6vh, 8px) 0;
+    margin: clamp(4px, 0.6vh, 10px) 0;
     line-height: 1.15;
     max-width: 95%;
     word-break: break-word;
@@ -199,69 +170,63 @@ body, html {
 
 /* Horários do Velório */
 .horarios-velorio {
-    color: var(--cor-texto);
-    font-size: clamp(17px, 2.1vh, 25px);
+    color: var(--cor-primaria);
+    font-size: clamp(18px, 2.2vh, 26px);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
     flex-wrap: wrap;
-    margin: clamp(2px, 0.4vh, 6px) 0;
+    margin: clamp(2px, 0.5vh, 8px) 0;
 }
 
 .horarios-velorio .label {
     font-weight: 700;
-    color: var(--cor-texto-terroso);
 }
 
 .horarios-velorio .bold-time {
     font-weight: 900;
     font-size: 1.12em;
-    color: var(--cor-primaria);
 }
 
 .horarios-velorio .margin-left {
     margin-left: clamp(14px, 2.5vw, 28px);
 }
 
-/* Bloco de Local / Destino da Sepultura (Estilo Pastel & Acolhedor) */
+/* Bloco de Local / Destino da Sepultura */
 .destino-bloco {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    background: var(--cor-primaria-pastel);
-    padding: clamp(7px, 1vh, 12px) clamp(18px, 2.8vw, 34px);
+    background: rgba(1, 129, 61, 0.09);
+    padding: clamp(8px, 1.1vh, 14px) clamp(20px, 3vw, 36px);
     border-radius: 999px;
-    border: 1.5px solid rgba(44, 87, 64, 0.22);
-    box-shadow: 0 4px 12px rgba(44, 87, 64, 0.06);
+    border: 1.5px solid rgba(1, 129, 61, 0.3);
     max-width: 95%;
-    margin: clamp(2px, 0.5vh, 8px) 0;
+    margin: clamp(4px, 0.6vh, 10px) 0;
 }
 
 .destino-titulo {
-    color: var(--cor-texto-terroso);
-    font-weight: 800;
-    font-size: clamp(14px, 1.7vh, 20px);
+    color: var(--cor-primaria);
+    font-weight: 700;
+    font-size: clamp(15px, 1.8vh, 21px);
 }
 
 .destino-local {
     color: var(--cor-primaria);
     font-weight: 900;
-    font-size: clamp(15px, 2vh, 23px);
+    font-size: clamp(16px, 2.1vh, 24px);
     text-transform: uppercase;
-    letter-spacing: 0.03em;
 }
 
-/* Bloco dos QR Codes Centrais (Grandes e Fáceis de Escanear) */
+/* Bloco dos QR Codes */
 .qrcodes-bloco {
     display: flex;
-    gap: clamp(18px, 3.2vw, 44px);
+    gap: clamp(18px, 3vw, 40px);
     justify-content: center;
     align-items: stretch;
-    margin: clamp(4px, 0.8vh, 12px) 0;
-    width: 100%;
-    max-width: 820px;
+    margin: clamp(6px, 1vh, 14px) 0;
 }
 
 .qr-item {
@@ -269,153 +234,68 @@ body, html {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: var(--cor-fundo-card);
-    padding: clamp(10px, 1.4vh, 16px) clamp(18px, 2.5vw, 28px);
-    border-radius: 18px;
-    box-shadow: var(--sombra-card);
-    border: 1.5px solid rgba(198, 155, 86, 0.35);
-    gap: 3px;
-    flex: 1;
-    max-width: 330px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: #ffffff;
+    padding: clamp(10px, 1.3vh, 16px) clamp(14px, 1.8vw, 20px);
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    border: 1.5px solid #e2e8f0;
+    gap: 6px;
 }
 
 .qr-titulo {
     color: var(--cor-primaria);
-    font-size: clamp(14px, 1.8vh, 20px);
-    font-weight: 900;
+    font-size: clamp(12px, 1.5vh, 16px);
+    font-weight: 800;
     letter-spacing: 0.05em;
-    text-transform: uppercase;
-}
-
-.qr-subtitulo {
-    color: var(--cor-texto-terroso);
-    font-size: clamp(11px, 1.3vh, 14px);
-    font-weight: 700;
-    margin-bottom: 6px;
-    white-space: nowrap;
 }
 
 .qr-item img {
-    width: clamp(110px, 14vh, 160px);
-    height: clamp(110px, 14vh, 160px);
+    width: clamp(90px, 11vh, 140px);
+    height: clamp(90px, 11vh, 140px);
     object-fit: contain;
-    background: #ffffff;
-    padding: 5px;
-    border-radius: 10px;
-    border: 1px solid var(--cor-borda-suave);
 }
 
-/* ==========================================================================
-   Banners Inferiores Acolhedores: Flora Bosque & LinkTree / Redes
-   ========================================================================== */
-
-.rodape-banners-bloco {
-    display: flex;
-    gap: clamp(10px, 1.6vw, 20px);
-    width: 100%;
-    max-width: 840px;
-    justify-content: center;
-    align-items: stretch;
-    margin-top: clamp(2px, 0.5vh, 8px);
-}
-
-.banner-card {
-    flex: 1;
-    display: flex;
+/* Bloco Inferior (Flora + Redes Sociais) */
+.rodape-inferior-bloco {
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    padding: clamp(7px, 1.1vh, 12px) clamp(14px, 1.8vw, 20px);
-    border-radius: 16px;
-    gap: clamp(8px, 1.2vw, 14px);
-    min-width: 0;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-/* Banner Flora Bosque (Gradiente Botânico Verde Musgo) */
-.banner-flora {
-    background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-primaria-dark) 100%);
-    color: #ffffff;
-    border: 1px solid rgba(198, 155, 86, 0.4);
-}
-
-/* Banner Redes (Gradiente Terroso Nobre / Café com Linho) */
-.banner-redes {
-    background: linear-gradient(135deg, var(--cor-terrosa) 0%, var(--cor-terrosa-dark) 100%);
-    color: #ffffff;
-    border: 1px solid rgba(244, 237, 229, 0.35);
-}
-
-.banner-conteudo {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 3px;
-    text-align: left;
-    min-width: 0;
-    flex: 1;
-}
-
-.banner-tag {
-    padding: 2px 8px;
+    justify-content: center;
+    gap: clamp(14px, 2.2vw, 32px);
+    margin-top: clamp(4px, 0.6vh, 10px);
+    background: rgba(255, 255, 255, 0.88);
+    padding: clamp(5px, 0.8vh, 10px) clamp(16px, 2.5vw, 32px);
     border-radius: 999px;
-    font-weight: 900;
-    font-size: clamp(9px, 1.1vh, 12px);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    display: inline-block;
+    border: 1px solid rgba(1, 129, 61, 0.22);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
 }
 
-.tag-flora {
-    background: var(--cor-dourado-bg);
-    color: var(--cor-dourado-claro);
-    border: 1px solid rgba(198, 155, 86, 0.6);
-}
-
-.tag-redes {
-    background: rgba(250, 247, 242, 0.2);
-    color: #FAF7F2;
-    border: 1px solid rgba(250, 247, 242, 0.45);
-}
-
-.banner-texto {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    width: 100%;
-}
-
-.banner-titulo {
-    font-weight: 800;
-    font-size: clamp(12px, 1.5vh, 16px);
-    color: #ffffff;
-    line-height: 1.2;
-}
-
-.banner-desc {
-    font-size: clamp(10px, 1.2vh, 13px);
-    color: rgba(255, 255, 255, 0.9);
-    font-weight: 600;
-    line-height: 1.2;
-}
-
-.banner-qr-wrapper {
-    flex-shrink: 0;
+.rodape-subitem {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: clamp(8px, 1.2vw, 12px);
+    color: var(--cor-primaria);
+    font-size: clamp(12px, 1.5vh, 16px);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
 }
 
-.banner-qr-wrapper img {
-    width: clamp(52px, 7vh, 72px);
-    height: clamp(52px, 7vh, 72px);
+.rodape-subitem img {
+    width: clamp(38px, 4.8vh, 54px);
+    height: clamp(38px, 4.8vh, 54px);
     background: #ffffff;
     padding: 3px;
-    border-radius: 9px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     object-fit: contain;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.rodape-divisor {
+    width: 1.5px;
+    height: clamp(22px, 2.8vh, 32px);
+    background-color: rgba(1, 129, 61, 0.3);
 }
 
 /* ==========================================================================
@@ -423,20 +303,19 @@ body, html {
    ========================================================================== */
 
 #bloco-agenda-sala {
-    background: var(--cor-fundo);
+    background: #f8fafc;
 }
 
 .agenda-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-primaria-dark) 100%);
+    background: var(--cor-primaria);
     color: #ffffff;
     padding: clamp(16px, 2.4vh, 30px) clamp(24px, 4.5vw, 56px);
     min-height: clamp(75px, 9vh, 105px);
     flex-shrink: 0;
-    box-shadow: 0 6px 20px rgba(27, 56, 41, 0.22);
-    border-bottom: 2.5px solid rgba(198, 155, 86, 0.45);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
 }
 
 .agenda-logo {
@@ -445,7 +324,6 @@ body, html {
     object-fit: contain;
     object-position: left center;
     flex-shrink: 0;
-    filter: brightness(1.05);
 }
 
 .agenda-titulo-wrapper {
@@ -461,15 +339,13 @@ body, html {
     font-weight: 900;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .agenda-data {
     font-size: clamp(13px, 1.7vh, 18px);
-    opacity: 0.95;
+    opacity: 0.94;
     font-weight: 700;
     margin-top: 2px;
-    color: var(--cor-dourado-claro);
 }
 
 .agenda-relogio {
@@ -477,16 +353,15 @@ body, html {
     font-weight: 900;
     white-space: nowrap;
     flex-shrink: 0;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .agenda-subbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: var(--cor-primaria-pastel);
+    background: #e8f5e9;
     padding: clamp(10px, 1.3vh, 16px) clamp(20px, 3.5vw, 44px);
-    border-bottom: 2px solid rgba(44, 87, 64, 0.2);
+    border-bottom: 2px solid var(--cor-primaria);
     flex-shrink: 0;
 }
 
@@ -499,11 +374,10 @@ body, html {
     font-size: clamp(13px, 1.6vh, 18px);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    box-shadow: 0 2px 8px rgba(44, 87, 64, 0.2);
 }
 
 .agenda-instrucao {
-    color: var(--cor-texto-terroso);
+    color: #2e7d32;
     font-weight: 700;
     font-size: clamp(13px, 1.5vh, 17px);
 }
@@ -533,11 +407,11 @@ body, html {
     display: flex;
     align-items: center;
     gap: clamp(14px, 2vw, 22px);
-    background: var(--cor-fundo-card);
-    border-radius: 14px;
+    background: #ffffff;
+    border-radius: 12px;
     padding: clamp(8px, 1.1vh, 14px) clamp(16px, 2vw, 24px);
-    box-shadow: 0 4px 16px rgba(44, 87, 64, 0.06);
-    border: 1.5px solid var(--cor-borda-suave);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    border: 1.5px solid #e2e8f0;
     border-left: 8px solid var(--cor-primaria);
     transition: transform 0.2s ease;
     flex: 1;
@@ -545,9 +419,8 @@ body, html {
 }
 
 .agenda-card--encerrado {
-    opacity: 0.5;
-    border-left-color: #9E9B95;
-    background: #F4EFEA;
+    opacity: 0.45;
+    border-left-color: #a0aec0;
 }
 
 .agenda-card.linha-invisivel {
@@ -566,7 +439,7 @@ body, html {
     object-fit: cover;
     border: 2.5px solid var(--cor-primaria);
     flex-shrink: 0;
-    background: var(--cor-terrosa-light);
+    background: #f0f4f1;
 }
 
 .card-info {
@@ -597,7 +470,7 @@ body, html {
 .card-nome {
     font-weight: 900;
     font-size: clamp(14px, 1.9vh, 20px);
-    color: var(--cor-texto);
+    color: #1a202c;
     text-transform: uppercase;
     white-space: nowrap;
     overflow: hidden;
@@ -611,7 +484,7 @@ body, html {
     align-items: center;
     gap: 10px;
     font-size: clamp(12px, 1.4vh, 16px);
-    color: var(--cor-texto-secundario);
+    color: #4a5568;
     font-weight: 700;
     flex-wrap: nowrap;
     white-space: nowrap;
@@ -621,14 +494,14 @@ body, html {
     background: var(--cor-primaria);
     color: #ffffff;
     padding: 2px 8px;
-    border-radius: 6px;
+    border-radius: 5px;
     font-weight: 800;
     font-size: 0.95em;
     white-space: nowrap;
 }
 
 .card-horario {
-    color: var(--cor-texto);
+    color: #2d3748;
     font-weight: 800;
     white-space: nowrap;
 }
@@ -654,7 +527,7 @@ body, html {
 .indicador-paginacao-sala {
     text-align: center;
     padding: clamp(4px, 0.6vh, 8px) 0 0 0;
-    color: var(--cor-texto-terroso);
+    color: #718096;
     font-size: clamp(11px, 1.3vh, 15px);
     font-weight: 700;
     text-transform: uppercase;
@@ -667,9 +540,9 @@ body, html {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--cor-fundo);
+    background: #ffffff;
     padding: clamp(10px, 1.3vh, 16px) clamp(20px, 3.5vw, 44px);
-    border-top: 1.5px solid var(--cor-borda-suave);
+    border-top: 1.5px solid #e2e8f0;
     font-size: clamp(13px, 1.6vh, 18px);
     color: var(--cor-primaria);
     font-weight: 800;

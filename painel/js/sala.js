@@ -145,14 +145,6 @@ function exibirDadosHomenagem(dados) {
     }
 
     // QR Codes
-    const urlFlora = "https://bosqueesperanca.com.br/flora/";
-    const qrFlora = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(urlFlora)}`;
-    const qrMemorialUrl = dados.qrCode || `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://memorialbosque.com.br`;
-    const linkVelorio = (typeof dados.velorio_online === 'string' && dados.velorio_online.length > 5) 
-        ? dados.velorio_online 
-        : "https://www.adiau.com.br/embed/?hash=beFS6qSdk8HJKlKV5gqzYh93#!";
-    const qrVelorioUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(linkVelorio)}`;
-
     const elCardMemorial = document.getElementById('card-qr-memorial');
     const elCardVelorio = document.getElementById('card-qr-velorio');
     const elQrMemorial = document.getElementById('qr-memorial');
@@ -160,22 +152,76 @@ function exibirDadosHomenagem(dados) {
     const elTitMemorial = document.getElementById('titulo-qr-memorial');
     const elTitVelorio = document.getElementById('titulo-qr-velorio');
 
-    if (elCardMemorial && elQrMemorial) {
-        elCardMemorial.style.display = 'flex';
-        elQrMemorial.src = qrMemorialUrl;
-        if (elTitMemorial) elTitMemorial.innerText = "MEMORIAL";
+    // 1. QR Code do Memorial (específico do homenageado quando cadastrado no Bubble)
+    const temMemorial = Boolean(
+        dados.id_memorial ||
+        dados.qr_code_memorial ||
+        dados.link_memorial ||
+        dados.qrCode
+    );
+
+    if (temMemorial) {
+        let qrMemorialSrc = dados.qr_code_memorial || dados.qrCode;
+        if (!qrMemorialSrc && dados.link_memorial) {
+            qrMemorialSrc = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(dados.link_memorial)}`;
+        } else if (!qrMemorialSrc && dados.id_memorial) {
+            qrMemorialSrc = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(`https://memorialbosque.com.br/memorial/${dados.id_memorial}`)}`;
+        }
+
+        if (elCardMemorial && elQrMemorial && qrMemorialSrc) {
+            elCardMemorial.style.display = 'flex';
+            elQrMemorial.src = qrMemorialSrc;
+            if (elTitMemorial) elTitMemorial.innerText = "MEMORIAL";
+        } else if (elCardMemorial) {
+            elCardMemorial.style.display = 'none';
+        }
+    } else {
+        // Quando NÃO houver memorial cadastrado, esconde o card do Memorial
+        if (elCardMemorial) {
+            elCardMemorial.style.display = 'none';
+        }
     }
 
-    if (elCardVelorio && elQrVelorio) {
-        elCardVelorio.style.display = 'flex';
-        elQrVelorio.src = qrFlora;
-        if (elTitVelorio) elTitVelorio.innerText = "FLORA";
+    // 2. QR Code do Velório On-line (Apenas se constar na Intuo)
+    const temVelorioOnline = Boolean(
+        dados.velorio_online &&
+        typeof dados.velorio_online === 'string' &&
+        dados.velorio_online.trim().length > 3 &&
+        dados.velorio_online.trim().toLowerCase() !== 'null' &&
+        dados.velorio_online.trim().toLowerCase() !== 'undefined'
+    );
+
+    if (temVelorioOnline) {
+        const linkVelorio = dados.velorio_online.startsWith('http')
+            ? dados.velorio_online
+            : `https://${dados.velorio_online}`;
+        const qrVelorioUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(linkVelorio)}`;
+
+        if (elCardVelorio && elQrVelorio) {
+            elCardVelorio.style.display = 'flex';
+            elQrVelorio.src = qrVelorioUrl;
+            if (elTitVelorio) elTitVelorio.innerText = "VELÓRIO ON-LINE";
+        }
+    } else {
+        // Quando NÃO constar velório online na Intuo, esconde o card
+        if (elCardVelorio) {
+            elCardVelorio.style.display = 'none';
+        }
     }
 
-    // QR Redes
+    // 3. QR Flora & Redes (Rodapé Inferior)
+    const urlFlora = "https://bosqueesperanca.com.br/flora/";
+    const qrFloraUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(urlFlora)}`;
+    const elQrFlora = document.getElementById('qr-flora');
+    if (elQrFlora) {
+        elQrFlora.src = qrFloraUrl;
+    }
+
+    const urlRedes = "https://linktr.ee/bosquedaesperanca";
+    const qrRedesUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(urlRedes)}`;
     const elQrRedes = document.getElementById('qr-redes');
     if (elQrRedes) {
-        elQrRedes.src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent("https://linktr.ee/bosquedaesperanca")}`;
+        elQrRedes.src = qrRedesUrl;
     }
 }
 
@@ -190,11 +236,11 @@ async function ativarModoSalaDisponivel() {
     if (blocoHomenagem) blocoHomenagem.style.display = 'none';
     if (blocoAgenda) blocoAgenda.style.display = 'flex';
 
-    // Nome da sala no badge: exibe APENAS "SALA X"
+    // Nome da sala no badge: exibe APENAS "SALA X" ou "SALA IMERSIVA"
     const badgeSala = document.getElementById('badge-sala-nome');
     if (badgeSala) {
         const nomeFormatado = String(paramSala).toLowerCase().includes('imersiva') || paramSala === '3' 
-            ? 'SALA 3' 
+            ? 'SALA IMERSIVA' 
             : `SALA ${paramSala}`;
         badgeSala.innerText = nomeFormatado.toUpperCase();
     }
@@ -207,6 +253,218 @@ async function ativarModoSalaDisponivel() {
 }
 
 // 4. CARREGA E RENDERIZA A AGENDA DO DIA
+let paginacaoIntervalSala = null;
+const ITENS_POR_PAGINA_SALA = 5;
+const TEMPO_POR_PAGINA_SALA = 15000; // 15 segundos por página
+
+function formatarDestinoAgenda(destinoTexto, tipoServico) {
+    const mapaNomesQuadras = {
+        'PAIN II': 'PAINEIRAS II', 'PAIN': 'PAINEIRAS', 'PAINEIRAS II': 'PAINEIRAS II', 'PAINEIRAS': 'PAINEIRAS',
+        'FLAMBOY': 'FLAMBOYANT', 'FLAMBOYANT': 'FLAMBOYANT', 'BOUN': 'BOUGAINVILLE', 'BOUGAINVILLE': 'BOUGAINVILLE',
+        'ANGICO': 'ANGICO', 'ACACIA': 'ACÁCIA', 'ACÁCIA': 'ACÁCIA', 'HIBISCO': 'HIBISCO',
+        'IPÊ': 'IPÊ', 'IPE': 'IPÊ', 'FICUS': 'FICUS', 'ANGELIM': 'ANGELIM',
+        'BURITIS': 'BURITIS', 'MANACA': 'MANACÁ', 'MANACÁ': 'MANACÁ', 'MAGNOLIA': 'MAGNÓLIA', 'MAGNÓLIA': 'MAGNÓLIA'
+    };
+
+    if (destinoTexto && destinoTexto !== 'Consulte a ACM' && destinoTexto !== 'Consulte a recepção' && destinoTexto !== 'Direto') {
+        if (/crema[çc][ãa]o/i.test(destinoTexto)) {
+            return 'Cremação';
+        } else if (destinoTexto.includes('QD:')) {
+            const matchQd = destinoTexto.match(/QD:\s*([^.\n]+)/i);
+            if (matchQd) {
+                let qd = matchQd[1].trim().replace(/^\d+-/, '').trim().toUpperCase();
+                return mapaNomesQuadras[qd] || qd;
+            }
+        } else if (/jazigo/i.test(destinoTexto) || /quadra/i.test(destinoTexto)) {
+            let parte = destinoTexto;
+            if (/jazigo/i.test(parte)) parte = parte.split(/jazigo/i)[0].replace(/[-–\s]+$/, '');
+            if (/quadra/i.test(parte)) parte = parte.replace(/^.*quadra\s*/i, '');
+            let qd = parte.trim().replace(/^\d+-/, '').trim().toUpperCase();
+            return mapaNomesQuadras[qd] || qd;
+        } else {
+            const upper = destinoTexto.trim().toUpperCase();
+            return mapaNomesQuadras[upper] || upper;
+        }
+    } else {
+        if (tipoServico && String(tipoServico).toUpperCase().includes('CREMA')) {
+            return 'Cremação';
+        }
+        return 'Consulte a ACM';
+    }
+}
+
+function criarCardAgenda(item) {
+    const status = calcularStatus(item.data_inicio, item.data_fim);
+    const salaStr = item.sala ? String(item.sala).trim() : '';
+    const salaLower = salaStr.toLowerCase();
+    let sala = 'Direto';
+    if (salaStr && salaStr !== '-' && salaLower !== 'n/d' && salaStr !== 'null') {
+        if (salaLower.includes('imersiva') || salaStr === '3' || salaLower === 'sala 3') {
+            sala = 'Sala Imersiva';
+        } else if (salaLower.includes('sala') || salaLower.includes('direto')) {
+            sala = salaStr;
+        } else {
+            sala = `Sala ${salaStr}`;
+        }
+    }
+
+    const foto = item.foto || 'videos/logo_bosque.png';
+    const horario = formatarHorario(item.data_inicio, item.data_fim);
+    const destinoFormatado = formatarDestinoAgenda(item.destino, item.tipo_servico);
+
+    const card = document.createElement('div');
+    card.className = 'agenda-card' + (status.texto === 'Encerrado' ? ' agenda-card--encerrado' : '');
+    card.innerHTML = `
+        <img class="card-foto" src="${foto}" alt="Foto" onerror="this.src='videos/logo_bosque.png'">
+        <div class="card-info">
+            <div class="card-row-top">
+                <div class="card-nome">${item.nome || 'Homenageado'}</div>
+                <div class="card-status" style="color: ${status.cor};">${status.texto}</div>
+            </div>
+            <div class="card-row-bottom">
+                <div class="card-meta">
+                    <span class="card-sala">${sala}</span>
+                    <span class="card-horario">${horario}</span>
+                </div>
+                <div class="card-destino">${destinoFormatado}</div>
+            </div>
+        </div>
+    `;
+    return card;
+}
+
+function iniciarPaginacaoSala(cards) {
+    const grid = document.getElementById('agenda-grid-cards');
+    if (!grid) return;
+
+    clearInterval(paginacaoIntervalSala);
+    
+    // Limpa grid e remove linhas invisíveis anteriores
+    grid.innerHTML = '';
+    cards.forEach(c => grid.appendChild(c));
+
+    let indicador = document.getElementById('indicador-paginacao-sala');
+    if (!indicador) {
+        indicador = document.createElement('div');
+        indicador.id = 'indicador-paginacao-sala';
+        indicador.className = 'indicador-paginacao-sala';
+        grid.parentNode.appendChild(indicador);
+    }
+
+    const totalPaginas = Math.ceil(cards.length / ITENS_POR_PAGINA_SALA);
+
+    // Ajusta o tempo de exibição da agenda antes de chamar os vídeos baseado na quantidade de páginas
+    if (totalPaginas > 0) {
+        agendarProximoVideoSala(totalPaginas);
+    }
+
+    // Se houver apenas 1 página (até 5 itens)
+    if (cards.length <= ITENS_POR_PAGINA_SALA) {
+        cards.forEach(card => {
+            card.style.display = 'flex';
+        });
+        indicador.style.display = 'none';
+
+        const itensFaltando = ITENS_POR_PAGINA_SALA - cards.length;
+        for (let i = 0; i < itensFaltando; i++) {
+            const dummy = document.createElement('div');
+            dummy.className = 'agenda-card linha-invisivel';
+            dummy.style.visibility = 'hidden';
+            grid.appendChild(dummy);
+        }
+        return;
+    }
+
+    indicador.style.display = 'block';
+    let paginaAtual = 0;
+
+    function mostrarPaginaSala(novaPagina, animar = true, paginaAnterior = 0) {
+        const isVoltando = novaPagina < paginaAnterior;
+        const distanciaAnimacao = '30px';
+
+        let textoIndicador = `Exibindo página ${novaPagina + 1} de ${totalPaginas}`;
+        if (novaPagina === totalPaginas - 1) {
+            textoIndicador = `Página ${novaPagina + 1} de ${totalPaginas} &nbsp;&nbsp;|&nbsp;&nbsp; <span style="color: var(--cor-dourado, #FAA507);">Retornando ao início...</span>`;
+        }
+
+        const aplicarTrocaDeItens = () => {
+            cards.forEach(card => card.style.display = 'none');
+            grid.querySelectorAll('.linha-invisivel').forEach(e => e.remove());
+
+            const inicio = novaPagina * ITENS_POR_PAGINA_SALA;
+            const fim = inicio + ITENS_POR_PAGINA_SALA;
+            const itensPagina = cards.slice(inicio, fim);
+
+            itensPagina.forEach(card => {
+                card.style.display = 'flex';
+            });
+
+            const itensFaltando = ITENS_POR_PAGINA_SALA - itensPagina.length;
+            for (let i = 0; i < itensFaltando; i++) {
+                const dummy = document.createElement('div');
+                dummy.className = 'agenda-card linha-invisivel';
+                dummy.style.visibility = 'hidden';
+                grid.appendChild(dummy);
+            }
+
+            indicador.innerHTML = textoIndicador;
+        };
+
+        if (!animar) {
+            aplicarTrocaDeItens();
+            grid.style.transform = 'translateY(0)';
+            grid.style.opacity = '1';
+            return;
+        }
+
+        // Animação de Saída (Slide & Fade)
+        grid.style.transition = 'transform 0.4s ease-in, opacity 0.3s ease-in';
+        indicador.style.opacity = '0';
+
+        if (isVoltando) {
+            grid.style.transform = `translateY(${distanciaAnimacao})`;
+        } else {
+            grid.style.transform = `translateY(-${distanciaAnimacao})`;
+        }
+        grid.style.opacity = '0';
+
+        setTimeout(() => {
+            aplicarTrocaDeItens();
+
+            // Preparação para Entrada
+            grid.style.transition = 'none';
+            if (isVoltando) {
+                grid.style.transform = `translateY(-${distanciaAnimacao})`;
+            } else {
+                grid.style.transform = `translateY(${distanciaAnimacao})`;
+            }
+
+            void grid.offsetHeight; // Trigger reflow
+
+            // Animação de Entrada
+            grid.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s ease-out';
+            grid.style.transform = 'translateY(0)';
+            grid.style.opacity = '1';
+            indicador.style.opacity = '1';
+        }, 400);
+    }
+
+    mostrarPaginaSala(paginaAtual, false);
+
+    paginacaoIntervalSala = setInterval(() => {
+        if (!modoSalaDisponivel) {
+            clearInterval(paginacaoIntervalSala);
+            return;
+        }
+        let paginaAnterior = paginaAtual;
+        paginaAtual++;
+        if (paginaAtual >= totalPaginas) {
+            paginaAtual = 0;
+        }
+        mostrarPaginaSala(paginaAtual, true, paginaAnterior);
+    }, TEMPO_POR_PAGINA_SALA);
+}
+
 async function carregarAgendaDoDia() {
     try {
         const res = await fetch('/api/hall');
@@ -214,11 +472,13 @@ async function carregarAgendaDoDia() {
         const lista = await res.json();
 
         const grid = document.getElementById('agenda-grid-cards');
+        const indicador = document.getElementById('indicador-paginacao-sala');
         if (!grid) return;
         grid.innerHTML = '';
 
         if (!Array.isArray(lista) || lista.length === 0) {
-            grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #718096; font-size: 1.2rem; font-weight: 600; padding: 40px;">Nenhuma cerimônia programada no momento.</div>`;
+            grid.innerHTML = `<div style="text-align: center; color: #718096; font-size: 1.2rem; font-weight: 600; padding: 40px; width: 100%;">Nenhuma cerimônia programada no momento.</div>`;
+            if (indicador) indicador.style.display = 'none';
             return;
         }
 
@@ -249,11 +509,12 @@ async function carregarAgendaDoDia() {
         });
 
         if (listaValida.length === 0) {
-            grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #718096; font-size: 1.2rem; font-weight: 600; padding: 40px;">Nenhuma cerimônia programada no momento.</div>`;
+            grid.innerHTML = `<div style="text-align: center; color: #718096; font-size: 1.2rem; font-weight: 600; padding: 40px; width: 100%;">Nenhuma cerimônia programada no momento.</div>`;
+            if (indicador) indicador.style.display = 'none';
             return;
         }
 
-        // 3. Ordenação idêntica ao painel principal
+        // 3. Ordenação idêntica ao painel principal (Hall / Index)
         const ordemStatus = { 'Encerrando': 0, 'Em andamento': 1, 'Previsto': 2, 'Encerrado': 3 };
         listaValida.sort((a, b) => {
             const sa = calcularStatus(a.data_inicio, a.data_fim).texto;
@@ -272,113 +533,11 @@ async function carregarAgendaDoDia() {
             return fimA - fimB || inicioA - inicioB;
         });
 
-        let listaCompleta = listaValida;
-        let paginaAgenda = 0;
-        
-        // Calcula quantos cards cabem na tela sem criar barra de rolagem
-        function calcularItensPorPagina() {
-            const alturaDisponivel = grid.clientHeight || (window.innerHeight - 240);
-            const alturaEstimadaCard = 88;
-            const gap = 18;
-            const qtd = Math.max(1, Math.floor((alturaDisponivel + gap) / (alturaEstimadaCard + gap)));
-            return qtd;
-        }
+        // 4. Cria os elementos dos cards
+        const cards = listaValida.map(item => criarCardAgenda(item));
 
-        const ITENS_POR_PAGINA_SALA = calcularItensPorPagina();
-        const totalPaginas = Math.ceil(listaCompleta.length / ITENS_POR_PAGINA_SALA);
-
-        function renderizarPaginaAgenda(p) {
-            grid.innerHTML = '';
-            const inicio = p * ITENS_POR_PAGINA_SALA;
-            const fim = inicio + ITENS_POR_PAGINA_SALA;
-            const itensPagina = listaCompleta.slice(inicio, fim);
-
-            itensPagina.forEach(item => {
-                const status = calcularStatus(item.data_inicio, item.data_fim);
-                const salaStr = item.sala ? String(item.sala).trim() : '';
-                const salaLower = salaStr.toLowerCase();
-                let sala = 'Direto';
-                if (salaStr && salaStr !== '-' && salaLower !== 'n/d' && salaStr !== 'null') {
-                    if (salaLower.includes('imersiva')) {
-                        sala = 'Imersiva';
-                    } else if (salaStr === '3' || salaLower === 'sala 3') {
-                        sala = 'Sala 3';
-                    } else if (salaLower.includes('sala') || salaLower.includes('direto')) {
-                        sala = salaStr;
-                    } else {
-                        sala = `Sala ${salaStr}`;
-                    }
-                }
-
-                const foto = item.foto || 'videos/logo_bosque.png';
-                const horario = formatarHorario(item.data_inicio, item.data_fim);
-
-                let destinoFormatado = item.destino || 'Consulte a ACM';
-                const mapaNomesQuadras = {
-                    'PAIN II': 'PAINEIRAS II', 'PAIN': 'PAINEIRAS', 'PAINEIRAS II': 'PAINEIRAS II', 'PAINEIRAS': 'PAINEIRAS',
-                    'FLAMBOY': 'FLAMBOYANT', 'FLAMBOYANT': 'FLAMBOYANT', 'BOUN': 'BOUGAINVILLE', 'BOUGAINVILLE': 'BOUGAINVILLE',
-                    'ANGICO': 'ANGICO', 'ACACIA': 'ACÁCIA', 'ACÁCIA': 'ACÁCIA', 'HIBISCO': 'HIBISCO',
-                    'IPÊ': 'IPÊ', 'IPE': 'IPÊ', 'FICUS': 'FICUS', 'ANGELIM': 'ANGELIM',
-                    'BURITIS': 'BURITIS', 'MANACA': 'MANACÁ', 'MANACÁ': 'MANACÁ', 'MAGNOLIA': 'MAGNÓLIA', 'MAGNÓLIA': 'MAGNÓLIA'
-                };
-                if (destinoFormatado && destinoFormatado !== 'Consulte a ACM' && destinoFormatado !== 'Consulte a recepção' && destinoFormatado !== 'Direto') {
-                    if (/crema[çc][ãa]o/i.test(destinoFormatado)) {
-                        destinoFormatado = 'Cremação';
-                    } else if (destinoFormatado.includes('QD:')) {
-                        const matchQd = destinoFormatado.match(/QD:\s*([^.\n]+)/i);
-                        if (matchQd) {
-                            let qd = matchQd[1].trim().replace(/^\d+-/, '').trim().toUpperCase();
-                            destinoFormatado = mapaNomesQuadras[qd] || qd;
-                        }
-                    } else if (/jazigo/i.test(destinoFormatado) || /quadra/i.test(destinoFormatado)) {
-                        let parte = destinoFormatado;
-                        if (/jazigo/i.test(parte)) parte = parte.split(/jazigo/i)[0].replace(/[-–\s]+$/, '');
-                        if (/quadra/i.test(parte)) parte = parte.replace(/^.*quadra\s*/i, '');
-                        let qd = parte.trim().replace(/^\d+-/, '').trim().toUpperCase();
-                        destinoFormatado = mapaNomesQuadras[qd] || qd;
-                    } else {
-                        const upper = destinoFormatado.toUpperCase();
-                        if (mapaNomesQuadras[upper]) destinoFormatado = mapaNomesQuadras[upper];
-                    }
-                } else {
-                    if (item.tipo_servico && String(item.tipo_servico).toUpperCase().includes('CREMA')) {
-                        destinoFormatado = 'Cremação';
-                    } else {
-                        destinoFormatado = 'Consulte a ACM';
-                    }
-                }
-
-                const card = document.createElement('div');
-                card.className = 'agenda-card' + (status.texto === 'Encerrado' ? ' agenda-card--encerrado' : '');
-                card.innerHTML = `
-                    <img class="card-foto" src="${foto}" alt="Foto" onerror="this.src='videos/logo_bosque.png'">
-                    <div class="card-info">
-                        <div class="card-nome">${item.nome || 'Homenageado'}</div>
-                        <div class="card-meta">
-                            <span class="card-sala">${sala}</span>
-                            <span class="card-horario">${horario}</span>
-                        </div>
-                        <div class="card-destino">${destinoFormatado}</div>
-                        <div class="card-status" style="color: ${status.cor};">${status.texto}</div>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        renderizarPaginaAgenda(0);
-
-        if (totalPaginas > 1) {
-            clearInterval(window.timerPaginacaoAgendaSala);
-            window.timerPaginacaoAgendaSala = setInterval(() => {
-                if (!modoSalaDisponivel) {
-                    clearInterval(window.timerPaginacaoAgendaSala);
-                    return;
-                }
-                paginaAgenda = (paginaAgenda + 1) % totalPaginas;
-                renderizarPaginaAgenda(paginaAgenda);
-            }, 15000);
-        }
+        // 5. Inicia o esquema de paginação de 5 itens por página
+        iniciarPaginacaoSala(cards);
 
     } catch (e) {
         console.warn("Erro ao carregar agenda do dia na sala:", e);
@@ -406,12 +565,13 @@ async function iniciarCicloVideosSala() {
     agendarProximoVideoSala();
 }
 
-function agendarProximoVideoSala() {
+function agendarProximoVideoSala(totalPaginas = 1) {
     clearTimeout(timerAlternanciaVideo);
+    const tempoExibicao = Math.max(30000, totalPaginas * TEMPO_POR_PAGINA_SALA);
     timerAlternanciaVideo = setTimeout(() => {
         if (!modoSalaDisponivel) return;
         reproduzirVideoSala();
-    }, TEMPO_EXIBICAO_AGENDA);
+    }, tempoExibicao);
 }
 
 function reproduzirVideoSala() {
@@ -448,12 +608,12 @@ function reproduzirVideoSala() {
         indiceVideoSala = (indiceVideoSala + 1) % playlistVideosSala.length;
         // Recarrega agenda para manter dados frescos
         carregarAgendaDoDia();
-        agendarProximoVideoSala();
     };
 }
 
 function pararCicloVideosSala() {
     clearTimeout(timerAlternanciaVideo);
+    clearInterval(paginacaoIntervalSala);
     const overlay = document.getElementById('video-overlay-sala');
     const player = document.getElementById('video-sala-player');
     if (player) {
@@ -480,21 +640,23 @@ function formatarHorario(inicio, fim) {
     return `${hi} às ${hf}`;
 }
 
-function calcularStatus(dataInicio, dataFim) {
-    if (!dataInicio && !dataFim) {
-        return { texto: 'Agendado', cor: '#01813D' };
-    }
+function calcularStatus(data_inicio, data_fim) {
     const agora = new Date();
-    const ini = dataInicio ? new Date(dataInicio) : null;
-    const fim = dataFim ? new Date(dataFim) : null;
+    const inicio = new Date(data_inicio);
+    const fim = new Date(data_fim);
+    
+    const trintaMinAntes = new Date(fim.getTime() - 30 * 60 * 1000);
+    const vinteMinDepois = new Date(fim.getTime() + 20 * 60 * 1000);
 
-    if (fim && agora > fim) {
-        return { texto: 'Encerrado', cor: '#718096' };
+    if (agora < inicio) {
+        return { texto: 'Previsto', cor: '#3B82F6' }; // Azul
+    } else if (agora < trintaMinAntes) {
+        return { texto: 'Em andamento', cor: '#01813D' }; // Verde
+    } else if (agora >= trintaMinAntes && agora <= vinteMinDepois) {
+        return { texto: 'Encerrando', cor: '#FAA507' }; // Laranja
+    } else {
+        return { texto: 'Encerrado', cor: '#cf0303' }; // Vermelho
     }
-    if (ini && agora >= ini && (!fim || agora <= fim)) {
-        return { texto: 'Em andamento', cor: '#01813D' };
-    }
-    return { texto: 'Agendado', cor: '#FAA507' };
 }
 
 // 7. RELÓGIO E DATA EM TEMPO REAL
