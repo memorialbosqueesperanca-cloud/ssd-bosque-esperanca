@@ -275,11 +275,11 @@ async function carregarAgendaDoDia() {
         let listaCompleta = listaValida;
         let paginaAgenda = 0;
         
-        // Calcula quantos cards cabem na tela sem criar barra de rolagem (gap de 48px)
+        // Calcula quantos cards cabem na tela sem criar barra de rolagem
         function calcularItensPorPagina() {
             const alturaDisponivel = grid.clientHeight || (window.innerHeight - 240);
             const alturaEstimadaCard = 88;
-            const gap = 48;
+            const gap = 18;
             const qtd = Math.max(1, Math.floor((alturaDisponivel + gap) / (alturaEstimadaCard + gap)));
             return qtd;
         }
