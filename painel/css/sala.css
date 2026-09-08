@@ -362,21 +362,22 @@ body, html {
 
 .agenda-main {
     flex: 1;
-    padding: clamp(14px, 2vh, 28px) clamp(20px, 3.5vw, 44px);
+    padding: clamp(16px, 2.2vh, 32px) clamp(24px, 4vw, 56px);
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    justify-content: space-evenly;
+    justify-content: flex-start;
     min-height: 0;
 }
 
 .agenda-grid {
     display: flex;
     flex-direction: column;
-    gap: clamp(12px, 1.6vh, 20px);
-    justify-content: space-evenly;
+    gap: 48px;
+    justify-content: flex-start;
     height: 100%;
     width: 100%;
+    overflow: hidden;
 }
 
 .agenda-card {
@@ -385,11 +386,12 @@ body, html {
     gap: clamp(14px, 2vw, 22px);
     background: #ffffff;
     border-radius: 14px;
-    padding: clamp(12px, 1.6vh, 20px) clamp(16px, 2vw, 26px);
+    padding: clamp(12px, 1.5vh, 18px) clamp(16px, 2vw, 26px);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
     border: 1.5px solid #e2e8f0;
     border-left: 8px solid var(--cor-primaria);
     transition: transform 0.2s ease;
+    flex-shrink: 0;
 }
 
 .agenda-card--encerrado {

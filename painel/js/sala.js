@@ -190,13 +190,13 @@ async function ativarModoSalaDisponivel() {
     if (blocoHomenagem) blocoHomenagem.style.display = 'none';
     if (blocoAgenda) blocoAgenda.style.display = 'flex';
 
-    // Nome da sala no badge
+    // Nome da sala no badge: exibe APENAS "SALA X"
     const badgeSala = document.getElementById('badge-sala-nome');
     if (badgeSala) {
         const nomeFormatado = String(paramSala).toLowerCase().includes('imersiva') || paramSala === '3' 
-            ? 'SALA 3 (IMERSIVA)' 
+            ? 'SALA 3' 
             : `SALA ${paramSala}`;
-        badgeSala.innerText = `${nomeFormatado} — DISPONÍVEL`;
+        badgeSala.innerText = nomeFormatado.toUpperCase();
     }
 
     // Carrega os dados da Agenda do Dia
@@ -274,7 +274,17 @@ async function carregarAgendaDoDia() {
 
         let listaCompleta = listaValida;
         let paginaAgenda = 0;
-        const ITENS_POR_PAGINA_SALA = 4;
+        
+        // Calcula quantos cards cabem na tela sem criar barra de rolagem (gap de 48px)
+        function calcularItensPorPagina() {
+            const alturaDisponivel = grid.clientHeight || (window.innerHeight - 240);
+            const alturaEstimadaCard = 88;
+            const gap = 48;
+            const qtd = Math.max(1, Math.floor((alturaDisponivel + gap) / (alturaEstimadaCard + gap)));
+            return qtd;
+        }
+
+        const ITENS_POR_PAGINA_SALA = calcularItensPorPagina();
         const totalPaginas = Math.ceil(listaCompleta.length / ITENS_POR_PAGINA_SALA);
 
         function renderizarPaginaAgenda(p) {

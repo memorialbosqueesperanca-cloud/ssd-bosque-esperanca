@@ -122,7 +122,7 @@ async function executarPainelSSD(dataEspecifica, forcarIntuo = true) {
             console.log(`📡 [SINCRONIZAÇÃO COMPLETA] Buscando dados da Intuo + Memorial para ${dataAtual}...`);
             // 1. Busca e salva dados da INTUO no SQLite (Janela de 3 dias para cobrir velórios contínuos)
             try {
-                const dataFormatadaIntuo = `'${dataAtual}'`;
+                const dataFormatadaIntuo = dataAtual;
 
                 const payloadIntuo = {
                     "idConsulta": 4885,
@@ -144,15 +144,22 @@ async function executarPainelSSD(dataEspecifica, forcarIntuo = true) {
                 async function buscarIntuoComRetry(payload, maxTentativas = 3) {
                     for (let tentativa = 1; tentativa <= maxTentativas; tentativa++) {
                         try {
-                            const resp = await axios.post('https://api-bosquedaesperanca.intuo.app/iVertexServices/DataAdminDIO/ObterDadosConsulta', payload, {
+                            const resp = await fetch('https://api-bosquedaesperanca.intuo.app/iVertexServices/DataAdminDIO/ObterDadosConsulta', {
+                                method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
                                     'token': '7E30CE1DC3D202B0B9A2841694D3EDB44FB7C8',
-                                    'Authorization': '7E30CE1DC3D202B0B9A2841694D3EDB44FB7C8'
+                                    'Authorization': '7E30CE1DC3D202B0B9A2841694D3EDB44FB7C8',
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
                                 },
-                                timeout: 60000
+                                body: JSON.stringify(payload),
+                                signal: AbortSignal.timeout(60000)
                             });
-                            return resp.data?.ResponseData || [];
+                            if (!resp.ok) {
+                                throw new Error(`Erro HTTP: ${resp.status}`);
+                            }
+                            const json = await resp.json();
+                            return json.ResponseData || [];
                         } catch (err) {
                             if (tentativa === maxTentativas) throw err;
                             console.warn(`⚠️ [INTUO] Tentativa ${tentativa} falhou (${err.message}). Nova tentativa em 3s...`);
