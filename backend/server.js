@@ -219,6 +219,16 @@ async function executarPainelSSD(dataEspecifica, forcarIntuo = true) {
                 const dadosFiltrados = todosOsDados.filter(item => {
                     const tipo = String(item.ch_nome_tipo || '').toUpperCase();
                     const servico = String(item.ch_nome_serviço || '').toUpperCase();
+                    const grupo = String(item.ch_nome_grupo_serviço || '').toUpperCase();
+                    const recurso = String(item.ch_nome_recurso || '').toUpperCase();
+                    const obs = String(item.ch_observações || '').toUpperCase();
+
+                    // Filtro PET: não processa nem exibe cremação PET ou serviços de pets
+                    const ehPet = tipo.includes('PET') || servico.includes('PET') || grupo.includes('PET') || recurso.includes('PET') || obs.includes('PLANO PET');
+                    if (ehPet) {
+                        return false;
+                    }
+
                     const ehServicoDesejado = servicosDesejados.some(s => tipo.includes(s) || servico.includes(s));
 
                     // Regra: tickets criados há menos de 15 minutos são ignorados temporariamente para evitar erros
@@ -423,6 +433,12 @@ app.get('/api/exportar/excel', async (req, res) => {
             const tipo = String(item.tipo_servico || '').toUpperCase();
             const dest = String(item.destino || '').toUpperCase();
             const salaRaw = item.sala ? String(item.sala).trim().toLowerCase() : '';
+
+            // Filtro PET
+            if (tipo.includes('PET') || dest.includes('PET') || salaRaw.includes('pet')) {
+                return false;
+            }
+
             const ehSemSala = !salaRaw || salaRaw === 'direto' || salaRaw === 'n/d' || salaRaw === '-' || salaRaw === 'null';
 
             const ehCremacao = tipo.includes('CREMA') || dest.includes('CREMA');

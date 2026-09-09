@@ -454,6 +454,12 @@
                     const tipo = String(item.tipo_servico || '').toUpperCase();
                     const dest = String(item.destino || '').toUpperCase();
                     const salaRaw = item.sala ? String(item.sala).trim().toLowerCase() : '';
+
+                    // Ignora serviços PET / Cremação PET
+                    if (tipo.includes('PET') || dest.includes('PET') || salaRaw.includes('pet')) {
+                        return false;
+                    }
+
                     const ehSemSala = !salaRaw || salaRaw === 'direto' || salaRaw === 'n/d' || salaRaw === '-' || salaRaw === 'null';
 
                     const ehCremacao = tipo.includes('CREMA') || dest.includes('CREMA');

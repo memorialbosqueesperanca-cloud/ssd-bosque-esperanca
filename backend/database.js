@@ -117,6 +117,10 @@ function inicializarBanco() {
             db.run(`ALTER TABLE painel_consolidado ADD COLUMN editado_manualmente INTEGER DEFAULT 0`, () => {});
             db.run(`ALTER TABLE painel_consolidado ADD COLUMN visivel INTEGER DEFAULT 1`, () => {});
 
+            // Limpeza preventiva de registros de PET
+            db.run(`DELETE FROM intuo_eventos WHERE tipo_servico LIKE '%PET%' OR sala_recurso LIKE '%PET%' OR raw_json LIKE '%"ch_nome_tipo":"%PET%' OR raw_json LIKE '%"ch_nome_serviço":"%PET%' OR raw_json LIKE '%"ch_nome_grupo_serviço":"%PET%' OR raw_json LIKE '%"ch_nome_recurso":"%PET%'`, () => {});
+            db.run(`DELETE FROM painel_consolidado WHERE tipo_servico LIKE '%PET%' OR sala LIKE '%PET%' OR destino LIKE '%PET%'`, () => {});
+
             db.run(`CREATE INDEX IF NOT EXISTS idx_intuo_data ON intuo_eventos(data_inicio, data_referencia)`);
             db.run(`CREATE INDEX IF NOT EXISTS idx_memorial_data ON memorial_eventos(data_inicio)`);
             db.run(`CREATE INDEX IF NOT EXISTS idx_edicoes_chave ON eventos_edicoes(chave_cruzamento)`);
@@ -129,6 +133,39 @@ function inicializarBanco() {
 }
 
 inicializarBanco();
+
+function ehServicoPet(item, raw) {
+    if (!item) return false;
+    let rawObj = raw;
+    if (!rawObj && item.raw_json) {
+        try {
+            rawObj = typeof item.raw_json === 'string' ? JSON.parse(item.raw_json) : item.raw_json;
+        } catch (e) {
+            rawObj = {};
+        }
+    }
+    rawObj = rawObj || {};
+
+    const tipo = String(rawObj.ch_nome_tipo || item.tipo_servico || item.tipo || '').toUpperCase();
+    const servico = String(rawObj.ch_nome_serviço || item.servico || item.nome_servico || '').toUpperCase();
+    const grupo = String(rawObj.ch_nome_grupo_serviço || item.grupo_servico || '').toUpperCase();
+    const recurso = String(rawObj.ch_nome_recurso || item.sala_recurso || item.sala || '').toUpperCase();
+    const obs = String(rawObj.ch_observações || item.observacoes || '').toUpperCase();
+    const dest = String(item.destino || '').toUpperCase();
+
+    // Identifica se o serviço é Cremação PET ou qualquer atendimento PET
+    if (
+        tipo.includes('PET') ||
+        servico.includes('PET') ||
+        grupo.includes('PET') ||
+        recurso.includes('PET') ||
+        obs.includes('PLANO PET') ||
+        dest.includes('PET')
+    ) {
+        return true;
+    }
+    return false;
+}
 
 function normalizarTexto(texto) {
     if (!texto) return '';
@@ -246,6 +283,10 @@ function salvarEventosIntuo(registrosIntuo, dataReferenciaPadrao) {
             const TEMPO_MINIMO_MS = 15 * 60 * 1000;
 
             registrosIntuo.forEach((item, index) => {
+                if (ehServicoPet(item)) {
+                    return; // Não processa nem salva Cremação PET ou serviços de pets
+                }
+
                 if (item.dt_cadastro) {
                     const dataCadMs = new Date(item.dt_cadastro).getTime();
                     if (!isNaN(dataCadMs) && (agoraMs - dataCadMs >= 0) && (agoraMs - dataCadMs < TEMPO_MINIMO_MS)) {
@@ -935,6 +976,7 @@ function executarCruzamentoSQLite(dataReferencia) {
                     });
 
                     const intuosDoDia = (intuos || []).filter(i => {
+                        if (ehServicoPet(i)) return false;
                         const dtIni = extrairDataBrasil(i.data_inicio);
                         const dtFim = extrairDataBrasil(i.data_fim);
                         return dtIni === dataRef || dtFim === dataRef;
@@ -1138,6 +1180,7 @@ function executarCruzamentoSQLite(dataReferencia) {
 
                     const listaFinal = Array.from(mapaPorPessoa.values()).filter(item => {
                         if (item.visivel === 0) return false;
+                        if (ehServicoPet(item)) return false;
 
                         const tipo = String(item.tipo_servico || '').toUpperCase();
                         const dest = String(item.destino || '').toUpperCase();
