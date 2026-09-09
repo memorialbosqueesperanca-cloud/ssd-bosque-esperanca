@@ -85,8 +85,7 @@ function salvarConfiguracaoVideos(config) {
 // Gerenciamento de Clientes SSE (Auto-Refresh no Front)
 // =========================
 let sseClients = [];
-
-app.get('/api/events', (req, res) => {
+const sseHandler = (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -96,7 +95,10 @@ app.get('/api/events', (req, res) => {
     req.on('close', () => {
         sseClients = sseClients.filter(client => client !== res);
     });
-});
+};
+
+app.get('/api/events', sseHandler);
+app.get('/api/eventos', sseHandler);
 
 function dispararAtualizacaoParaFrontend() {
     sseClients.forEach(client => {
@@ -218,8 +220,6 @@ async function executarPainelSSD(dataEspecifica, forcarIntuo = true) {
                     const tipo = String(item.ch_nome_tipo || '').toUpperCase();
                     const servico = String(item.ch_nome_serviço || '').toUpperCase();
                     const ehServicoDesejado = servicosDesejados.some(s => tipo.includes(s) || servico.includes(s));
-                    const ehDeHoje = (item.dt_previsão_início && item.dt_previsão_início.startsWith(dataAtual)) ||
-                                     (item.dt_previsão_término && item.dt_previsão_término.startsWith(dataAtual));
 
                     // Regra: tickets criados há menos de 15 minutos são ignorados temporariamente para evitar erros
                     if (item.dt_cadastro) {
@@ -234,7 +234,7 @@ async function executarPainelSSD(dataEspecifica, forcarIntuo = true) {
                         }
                     }
 
-                    return ehServicoDesejado && ehDeHoje;
+                    return ehServicoDesejado;
                 });
 
                 await salvarEventosIntuo(dadosFiltrados, dataAtual);
@@ -515,9 +515,11 @@ app.post('/api/eventos/editar', async (req, res) => {
 
         const resultado = await salvarEdicaoEvento(dados);
         
-        // Re-executa consolidação e avisa as TVs
-        const dataAlvo = dados.data_referencia || (dados.data_inicio ? dados.data_inicio.slice(0, 10) : null);
-        await executarPainelSSD(dataAlvo, false);
+        // Re-executa consolidação no SQLite instantaneamente e avisa as TVs
+        const hoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+        const consolidados = await executarCruzamentoSQLite(hoje);
+        intuoCache = consolidados;
+        dispararAtualizacaoParaFrontend();
 
         res.json({ sucesso: true, mensagem: "Evento editado com sucesso!", dados: resultado });
     } catch (e) {
@@ -529,13 +531,16 @@ app.post('/api/eventos/editar', async (req, res) => {
 // Rota para restaurar padrão original da Intuo/Bubble (remove override manual)
 app.post('/api/eventos/restaurar', async (req, res) => {
     try {
-        const { chave_cruzamento, data_referencia } = req.body || {};
+        const { chave_cruzamento } = req.body || {};
         if (!chave_cruzamento) {
             return res.status(400).json({ sucesso: false, erro: "chave_cruzamento é obrigatória" });
         }
 
         const resultado = await removerEdicaoEvento(chave_cruzamento);
-        await executarPainelSSD(data_referencia, false);
+        const hoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+        const consolidados = await executarCruzamentoSQLite(hoje);
+        intuoCache = consolidados;
+        dispararAtualizacaoParaFrontend();
 
         res.json({ sucesso: true, mensagem: "Edição revertida para os dados originais da Intuo/Bubble!", dados: resultado });
     } catch (e) {

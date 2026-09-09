@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agenda Diária de Cerimônias - Bosque da Esperança</title>
+    <title>Agenda Geral de Cerimônias - Bosque da Esperança</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -13,7 +13,7 @@
             padding: 24px;
         }
         .container {
-            max-width: 1080px;
+            max-width: 1100px;
             margin: 0 auto;
             background: #FFFFFF;
             padding: 32px;
@@ -124,7 +124,7 @@
             background: #ED8936;
             color: #FFFFFF;
             border: none;
-            padding: 4px 8px;
+            padding: 5px 10px;
             font-size: 11px;
             font-weight: 700;
             border-radius: 4px;
@@ -178,7 +178,7 @@
         tbody tr { border-bottom: 1px solid #E2E8F0; }
         tbody tr:nth-child(even) { background: #F7FAFC; }
         tbody td {
-            padding: 9px 8px;
+            padding: 10px 8px;
             vertical-align: middle;
         }
         .col-num { width: 30px; text-align: center; font-weight: 700; color: #718096; }
@@ -305,7 +305,7 @@
             background: transparent;
             border: none;
             color: #FFFFFF;
-            font-size: 20px;
+            font-size: 22px;
             cursor: pointer;
             line-height: 1;
         }
@@ -434,7 +434,7 @@
                     <th>Horário</th>
                     <th>Local / Quadra</th>
                     <th>Status</th>
-                    <th class="col-acoes" style="text-align: center; width: 80px;">Ações</th>
+                    <th class="col-acoes" style="text-align: center; width: 90px;">Ações</th>
                 </tr>
             </thead>
             <tbody id="tabela-corpo">
@@ -976,7 +976,7 @@
         // Conexão SSE para atualizações automáticas em tempo real
         function conectarSSE() {
             try {
-                const eventSource = new EventSource('/api/eventos');
+                const eventSource = new EventSource('/api/events');
                 eventSource.onmessage = (event) => {
                     console.log('⚡ [SSE] Atualização de dados recebida');
                     // Se estiver visualizando a data de hoje, atualiza automaticamente

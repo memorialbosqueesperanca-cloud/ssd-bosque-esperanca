@@ -212,17 +212,15 @@ function formatarLocalCemiterio(texto, tipoServico) {
     return s;
 }
 
-function salvarEventosIntuo(registrosIntuo, dataReferencia) {
+function salvarEventosIntuo(registrosIntuo, dataReferenciaPadrao) {
     return new Promise((resolve, reject) => {
         if (!Array.isArray(registrosIntuo) || registrosIntuo.length === 0) {
             return resolve(0);
         }
 
-        const dataRef = dataReferencia || new Date().toISOString().split('T')[0];
+        const dataRefPadrao = dataReferenciaPadrao || new Date().toISOString().split('T')[0];
 
         db.serialize(() => {
-            db.run("DELETE FROM intuo_eventos WHERE data_referencia = ?", [dataRef]);
-
             const stmt = db.prepare(`
                 INSERT INTO intuo_eventos (
                     id_intuo, protocolo, nome_falecido, tipo_servico,
@@ -320,6 +318,7 @@ function salvarEventosIntuo(registrosIntuo, dataReferencia) {
                 const inicio = item['dt_previsão_início'] || item.data_inicio || item.horario_inicio || null;
                 const fim = item['dt_previsão_término'] || item.data_fim || item.horario_termino || null;
                 const status = item['ch_status'] || item.status || 'Ativo';
+                const itemDataRef = extrairDataBrasil(inicio) || extrairDataBrasil(fim) || dataRefPadrao;
 
                 stmt.run(
                     idIntuo,
@@ -331,7 +330,7 @@ function salvarEventosIntuo(registrosIntuo, dataReferencia) {
                     inicio,
                     fim,
                     status,
-                    dataRef,
+                    itemDataRef,
                     velorioOnline,
                     JSON.stringify(item)
                 );
@@ -1166,49 +1165,56 @@ function executarCruzamentoSQLite(dataReferencia) {
                         listaFinal
                     );
 
-                    db.serialize(() => {
-                        db.run('DELETE FROM painel_consolidado');
+                    const hoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
 
-                        const stmt = db.prepare(`
-                            INSERT INTO painel_consolidado (
-                                chave_cruzamento, id_intuo, id_memorial, nome_falecido,
-                                sala, sala_normalizada, foto_url, qr_code_memorial, link_memorial, velorio_online, destino, tipo_servico,
-                                data_inicio, data_fim, data_nascimento, data_falecimento,
-                                status_evento, origem_dados, editado_manualmente, visivel, atualizado_em
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                        `);
+                    if (dataRef === hoje) {
+                        db.serialize(() => {
+                            db.run('DELETE FROM painel_consolidado');
 
-                        listaFinal.forEach(item => {
-                            stmt.run(
-                                item.chave_cruzamento,
-                                item.id_intuo,
-                                item.id_memorial,
-                                item.nome_falecido,
-                                item.sala,
-                                item.sala_normalizada,
-                                item.foto_url,
-                                item.qr_code_memorial,
-                                item.link_memorial,
-                                item.velorio_online,
-                                item.destino,
-                                item.tipo_servico,
-                                item.data_inicio,
-                                item.data_fim,
-                                item.data_nascimento,
-                                item.data_falecimento,
-                                item.status_evento,
-                                item.origem_dados,
-                                item.editado_manualmente ? 1 : 0,
-                                item.visivel !== undefined ? item.visivel : 1
-                            );
+                            const stmt = db.prepare(`
+                                INSERT INTO painel_consolidado (
+                                    chave_cruzamento, id_intuo, id_memorial, nome_falecido,
+                                    sala, sala_normalizada, foto_url, qr_code_memorial, link_memorial, velorio_online, destino, tipo_servico,
+                                    data_inicio, data_fim, data_nascimento, data_falecimento,
+                                    status_evento, origem_dados, editado_manualmente, visivel, atualizado_em
+                                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                            `);
+
+                            listaFinal.forEach(item => {
+                                stmt.run(
+                                    item.chave_cruzamento,
+                                    item.id_intuo,
+                                    item.id_memorial,
+                                    item.nome_falecido,
+                                    item.sala,
+                                    item.sala_normalizada,
+                                    item.foto_url,
+                                    item.qr_code_memorial,
+                                    item.link_memorial,
+                                    item.velorio_online,
+                                    item.destino,
+                                    item.tipo_servico,
+                                    item.data_inicio,
+                                    item.data_fim,
+                                    item.data_nascimento,
+                                    item.data_falecimento,
+                                    item.status_evento,
+                                    item.origem_dados,
+                                    item.editado_manualmente ? 1 : 0,
+                                    item.visivel !== undefined ? item.visivel : 1
+                                );
+                            });
+
+                            stmt.finalize((errFinal) => {
+                                if (errFinal) return reject(errFinal);
+                                console.log('✨ [SQLITE] Cruzamento finalizado para ' + dataRef + ': ' + listaFinal.length + ' registros consolidados.');
+                                resolve(listaFinal);
+                            });
                         });
-
-                        stmt.finalize((errFinal) => {
-                            if (errFinal) return reject(errFinal);
-                            console.log('✨ [SQLITE] Cruzamento finalizado: ' + listaFinal.length + ' registros consolidados.');
-                            resolve(listaFinal);
-                        });
-                    });
+                    } else {
+                        console.log('✨ [SQLITE] Cruzamento histórico/futuro finalizado para ' + dataRef + ': ' + listaFinal.length + ' registros.');
+                        resolve(listaFinal);
+                    }
                 });
             });
         });
@@ -1232,17 +1238,19 @@ function salvarEdicaoEvento(dados) {
                 link_memorial, visivel, atualizado_em
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(chave_cruzamento) DO UPDATE SET
-                nome_falecido = coalesce(excluded.nome_falecido, eventos_edicoes.nome_falecido),
-                sala = coalesce(excluded.sala, eventos_edicoes.sala),
-                sala_normalizada = coalesce(excluded.sala_normalizada, eventos_edicoes.sala_normalizada),
-                destino = coalesce(excluded.destino, eventos_edicoes.destino),
-                tipo_servico = coalesce(excluded.tipo_servico, eventos_edicoes.tipo_servico),
-                data_inicio = coalesce(excluded.data_inicio, eventos_edicoes.data_inicio),
-                data_fim = coalesce(excluded.data_fim, eventos_edicoes.data_fim),
-                velorio_online = coalesce(excluded.velorio_online, eventos_edicoes.velorio_online),
-                foto_url = coalesce(excluded.foto_url, eventos_edicoes.foto_url),
-                link_memorial = coalesce(excluded.link_memorial, eventos_edicoes.link_memorial),
-                visivel = coalesce(excluded.visivel, eventos_edicoes.visivel),
+                id_intuo = coalesce(excluded.id_intuo, eventos_edicoes.id_intuo),
+                id_memorial = coalesce(excluded.id_memorial, eventos_edicoes.id_memorial),
+                nome_falecido = excluded.nome_falecido,
+                sala = excluded.sala,
+                sala_normalizada = excluded.sala_normalizada,
+                destino = excluded.destino,
+                tipo_servico = excluded.tipo_servico,
+                data_inicio = excluded.data_inicio,
+                data_fim = excluded.data_fim,
+                velorio_online = excluded.velorio_online,
+                foto_url = excluded.foto_url,
+                link_memorial = excluded.link_memorial,
+                visivel = excluded.visivel,
                 atualizado_em = CURRENT_TIMESTAMP
         `;
 
