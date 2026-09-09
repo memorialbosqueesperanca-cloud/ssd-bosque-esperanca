@@ -444,6 +444,450 @@ function parseParaTimestampLocal(str) {
     return new Date(`${limpo}-03:00`).getTime();
 }
 
+function diagnosticarCruzamento(dataReferencia, memoriaisDoDia, intuosDoDia, mapaPorPessoa, listaFinal) {
+
+    console.log('\n');
+    console.log('╔══════════════════════════════════════════════════════════════╗');
+    console.log('║              🔎 DIAGNÓSTICO INTUO × BUBBLE                 ║');
+    console.log('╚══════════════════════════════════════════════════════════════╝');
+
+    console.log('\n📅 DATA DE REFERÊNCIA:', dataReferencia);
+
+    // ============================================================
+    // 1. RESUMO
+    // ============================================================
+
+    console.log('\n━━━━━━━━━━━━━━ 1. RESUMO ━━━━━━━━━━━━━━');
+
+    console.log('Bubble do dia:', memoriaisDoDia.length);
+    console.log('Intuo do dia:', intuosDoDia.length);
+    console.log('Mapa após cruzamento:', mapaPorPessoa.size);
+    console.log('Lista final:', listaFinal.length);
+
+    // ============================================================
+    // 2. BUBBLE
+    // ============================================================
+
+    console.log('\n━━━━━━━━━━━━━━ 2. BUBBLE ━━━━━━━━━━━━━━');
+
+    memoriaisDoDia.forEach((m, index) => {
+        console.log(
+            `[BUBBLE ${index + 1}]`,
+            {
+                id_memorial: m.id_memorial,
+                nome: m.nome_falecido,
+                sala: m.sala_cerimonia,
+                inicio: m.data_inicio,
+                fim: m.data_fim,
+                destino: m.local_sepultura
+            }
+        );
+    });
+
+    // ============================================================
+    // 3. INTUO
+    // ============================================================
+
+    console.log('\n━━━━━━━━━━━━━━ 3. INTUO ━━━━━━━━━━━━━━');
+
+    intuosDoDia.forEach((i, index) => {
+
+        let raw = {};
+
+        try {
+            raw = JSON.parse(i.raw_json || '{}');
+        } catch (e) {}
+
+        const grupoServico =
+            String(raw.ch_nome_grupo_serviço || '').toUpperCase();
+
+        const nomeServico =
+            String(raw.ch_nome_serviço || '').toUpperCase();
+
+        const nomeNormalizado =
+            normalizarTexto(i.nome_falecido);
+
+        const existeNoBubble =
+            memoriaisDoDia.some(m =>
+                normalizarTexto(m.nome_falecido) === nomeNormalizado
+            );
+
+        console.log(
+            `[INTUO ${index + 1}]`,
+            {
+                id_intuo: i.id_intuo,
+                nome: i.nome_falecido,
+                nome_normalizado: nomeNormalizado,
+
+                existe_no_bubble: existeNoBubble,
+
+                tipo: i.tipo_servico,
+                grupo_servico: grupoServico,
+                nome_servico: nomeServico,
+
+                sala: i.sala_recurso,
+
+                inicio: i.data_inicio,
+                fim: i.data_fim,
+
+                destino: i.destino,
+
+                status: i.status,
+
+                velorio_online: i.velorio_online
+            }
+        );
+    });
+
+    // ============================================================
+    // 4. ANALISA CADA INTUO
+    // ============================================================
+
+    console.log('\n━━━━━━━━━━━━━━ 4. RASTREAMENTO INTUO ━━━━━━━━━━━━━━');
+
+    intuosDoDia.forEach((i, index) => {
+
+        const nomeNormalizado =
+            normalizarTexto(i.nome_falecido);
+
+        const chave = nomeNormalizado;
+
+        const existeNoMapaAntes =
+            mapaPorPessoa.has(chave);
+
+        let raw = {};
+
+        try {
+            raw = JSON.parse(i.raw_json || '{}');
+        } catch (e) {}
+
+        const grupoServico =
+            String(raw.ch_nome_grupo_serviço || '').toUpperCase();
+
+        const nomeServico =
+            String(raw.ch_nome_serviço || '').toUpperCase();
+
+        const ehBuffetOuApoio =
+            grupoServico.includes('BUFFET') ||
+            nomeServico.includes('KIT LANCHE') ||
+            nomeServico.includes('CAFETERIA');
+
+        const ehVelorio =
+            (
+                grupoServico.includes('VELÓRIO') ||
+                nomeServico.includes('SALA DE CERIMÔNIA') ||
+                (
+                    i.sala_recurso &&
+                    i.sala_recurso !== 'Direto'
+                )
+            ) &&
+            !ehBuffetOuApoio;
+
+        const ehCremacao =
+            (i.tipo_servico &&
+                i.tipo_servico.includes('CREMA')) ||
+            nomeServico.includes('CREMAÇÃO');
+
+        const ehSepultamento =
+            grupoServico.includes('SEPULTAMENTO') ||
+            (
+                i.tipo_servico &&
+                (
+                    i.tipo_servico.includes('SEPULTAMENTO') ||
+                    i.tipo_servico.includes('INUMAÇÃO')
+                )
+            );
+
+        console.log('\n────────────────────────────────────────');
+
+        console.log(`🔎 INTUO #${index + 1}`);
+
+        console.log('Nome:', i.nome_falecido);
+        console.log('Chave:', chave);
+
+        console.log('Existe no mapa:', existeNoMapaAntes);
+
+        console.log('Buffet/Apoio:', ehBuffetOuApoio);
+        console.log('É Velório:', ehVelorio);
+        console.log('É Cremação:', ehCremacao);
+        console.log('É Sepultamento:', ehSepultamento);
+
+        if (ehBuffetOuApoio) {
+
+            console.log(
+                '🚫 RESULTADO: IGNORADO COMO BUFFET/APOIO'
+            );
+
+            return;
+        }
+
+        if (existeNoMapaAntes) {
+
+            const registro = mapaPorPessoa.get(chave);
+
+            console.log(
+                '🔗 RESULTADO: CRUZADO COM BUBBLE'
+            );
+
+            console.log({
+                id_memorial: registro.id_memorial,
+                id_intuo: registro.id_intuo,
+                origem: registro.origem_dados
+            });
+
+        } else {
+
+            console.log(
+                '🆕 RESULTADO: REGISTRO EXCLUSIVO DA INTUO'
+            );
+
+            console.log(
+                '⚠️ Este registro deveria criar uma entrada independente.'
+            );
+        }
+    });
+
+    // ============================================================
+    // 5. MAPA FINAL
+    // ============================================================
+
+    console.log('\n━━━━━━━━━━━━━━ 5. MAPA FINAL ━━━━━━━━━━━━━━');
+
+    Array.from(mapaPorPessoa.values()).forEach((item, index) => {
+
+        console.log(`[MAPA ${index + 1}]`, {
+            nome: item.nome_falecido,
+
+            id_memorial: item.id_memorial,
+            id_intuo: item.id_intuo,
+
+            origem: item.origem_dados,
+
+            tipo: item.tipo_servico,
+
+            sala: item.sala,
+            sala_normalizada: item.sala_normalizada,
+
+            inicio: item.data_inicio,
+            fim: item.data_fim,
+
+            destino: item.destino
+        });
+    });
+
+    // ============================================================
+    // 6. ANALISA O FILTRO FINAL
+    // ============================================================
+
+    console.log('\n━━━━━━━━━━━━━━ 6. FILTRO FINAL ━━━━━━━━━━━━━━');
+
+    Array.from(mapaPorPessoa.values()).forEach(item => {
+
+        const tipo =
+            String(item.tipo_servico || '').toUpperCase();
+
+        const dest =
+            String(item.destino || '').toUpperCase();
+
+        const salaNorm =
+            String(item.sala_normalizada || '').toLowerCase();
+
+        const sala =
+            String(item.sala || '').trim().toLowerCase();
+
+        const ehSemSala =
+            !sala ||
+            sala === 'direto' ||
+            salaNorm === 'direto' ||
+            sala === 'n/d' ||
+            sala === '-' ||
+            sala === 'null';
+
+        const ehCremacao =
+            tipo.includes('CREMA') ||
+            dest.includes('CREMA');
+
+        const ehVelorio =
+            tipo.includes('VELÓRIO') ||
+            (!ehSemSala && item.id_memorial);
+
+        const seriaRemovido =
+            ehCremacao &&
+            ehSemSala &&
+            !ehVelorio;
+
+        if (seriaRemovido) {
+
+            console.log(
+                '❌ REMOVIDO DO PAINEL:',
+                {
+                    nome: item.nome_falecido,
+                    id_intuo: item.id_intuo,
+                    id_memorial: item.id_memorial,
+                    origem: item.origem_dados,
+
+                    tipo: item.tipo_servico,
+                    destino: item.destino,
+
+                    sala: item.sala,
+                    sala_normalizada: item.sala_normalizada,
+
+                    motivo:
+                        'CREMAÇÃO DIRETA SEM SALA E SEM VELÓRIO'
+                }
+            );
+
+        } else {
+
+            console.log(
+                '✅ PASSOU PELO FILTRO:',
+                {
+                    nome: item.nome_falecido,
+                    id_intuo: item.id_intuo,
+                    id_memorial: item.id_memorial,
+                    origem: item.origem_dados
+                }
+            );
+        }
+    });
+
+    // ============================================================
+    // 7. SOMENTE INTUO
+    // ============================================================
+
+    console.log('\n━━━━━━━━━━━━━━ 7. INTUO SOMENTE ━━━━━━━━━━━━━━');
+
+    const somenteIntuo =
+        Array.from(mapaPorPessoa.values())
+            .filter(item =>
+                item.id_intuo &&
+                !item.id_memorial
+            );
+
+    console.log(
+        `Encontrados ${somenteIntuo.length} registros exclusivos da Intuo.`
+    );
+
+    somenteIntuo.forEach(item => {
+
+        const apareceNaListaFinal =
+            listaFinal.some(
+                final =>
+                    final.id_intuo === item.id_intuo
+            );
+
+        console.log({
+            nome: item.nome_falecido,
+            id_intuo: item.id_intuo,
+
+            tipo: item.tipo_servico,
+            sala: item.sala,
+
+            aparece_na_lista_final:
+                apareceNaListaFinal,
+
+            status:
+                apareceNaListaFinal
+                    ? '✅ SERÁ EXIBIDO'
+                    : '❌ NÃO CHEGOU AO PAINEL'
+        });
+    });
+
+    // ============================================================
+    // 8. INTUO QUE ESTÁ NO BANCO MAS NÃO ESTÁ NO MAPA
+    // ============================================================
+
+    console.log('\n━━━━━━━━━━━━━━ 8. INTUO PERDIDA NO CRUZAMENTO ━━━━━━━━━━━━━━');
+
+    intuosDoDia.forEach(i => {
+
+        const chave =
+            normalizarTexto(i.nome_falecido);
+
+        const registro =
+            mapaPorPessoa.get(chave);
+
+        const existeNoMapa =
+            !!registro;
+
+        const correspondeAoRegistro =
+            registro &&
+            registro.id_intuo === i.id_intuo;
+
+        if (!existeNoMapa || !correspondeAoRegistro) {
+
+            console.log(
+                '🚨 POSSÍVEL REGISTRO PERDIDO:',
+                {
+                    nome: i.nome_falecido,
+                    id_intuo: i.id_intuo,
+                    chave,
+
+                    existe_no_mapa: existeNoMapa,
+
+                    registro_atual_no_mapa:
+                        registro
+                            ? {
+                                nome: registro.nome_falecido,
+                                id_intuo: registro.id_intuo,
+                                id_memorial: registro.id_memorial,
+                                origem: registro.origem_dados
+                            }
+                            : null
+                }
+            );
+        }
+    });
+
+    // ============================================================
+    // 9. RESULTADO FINAL
+    // ============================================================
+
+    console.log('\n━━━━━━━━━━━━━━ 9. RESULTADO FINAL ━━━━━━━━━━━━━━');
+
+    const finalIntuo =
+        listaFinal.filter(item =>
+            item.id_intuo
+        );
+
+    const finalBubble =
+        listaFinal.filter(item =>
+            item.id_memorial
+        );
+
+    const finalCruzados =
+        listaFinal.filter(item =>
+            item.id_intuo &&
+            item.id_memorial
+        );
+
+    const finalSomenteIntuo =
+        listaFinal.filter(item =>
+            item.id_intuo &&
+            !item.id_memorial
+        );
+
+    console.log({
+        total_painel: listaFinal.length,
+
+        registros_com_intuo:
+            finalIntuo.length,
+
+        registros_com_bubble:
+            finalBubble.length,
+
+        cruzados:
+            finalCruzados.length,
+
+        somente_intuo:
+            finalSomenteIntuo.length
+    });
+
+    console.log('\n╔══════════════════════════════════════════════════════════════╗');
+    console.log('║                 🏁 FIM DO DIAGNÓSTICO                      ║');
+    console.log('╚══════════════════════════════════════════════════════════════╝\n');
+}
+
 function executarCruzamentoSQLite(dataReferencia) {
     return new Promise((resolve, reject) => {
         const dataRef = dataReferencia || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
@@ -615,6 +1059,15 @@ function executarCruzamentoSQLite(dataReferencia) {
 
                     return true;
                 });
+
+                // DIAGNÓSTICO
+                diagnosticarCruzamento(
+                    dataRef,
+                    memoriaisDoDia,
+                    intuosDoDia,
+                    mapaPorPessoa,
+                    listaFinal
+                );
 
                 db.serialize(() => {
                     db.run('DELETE FROM painel_consolidado');

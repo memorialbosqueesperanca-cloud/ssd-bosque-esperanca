@@ -107,7 +107,7 @@ function exibirDadosHomenagem(dados) {
     // Destino / Local
     const elDestino = document.getElementById('destino-local');
     if (elDestino) {
-        let dest = dados.destino || "Consulte a ACM";
+        let dest = dados.destino || "Consulte a ADM";
         const mapaNomesQuadras = {
             'PAIN II': 'PAINEIRAS II', 'PAIN': 'PAINEIRAS', 'PAINEIRAS II': 'PAINEIRAS II', 'PAINEIRAS': 'PAINEIRAS',
             'FLAMBOY': 'FLAMBOYANT', 'FLAMBOYANT': 'FLAMBOYANT', 'BOUN': 'BOUGAINVILLE', 'BOUGAINVILLE': 'BOUGAINVILLE',
@@ -115,9 +115,9 @@ function exibirDadosHomenagem(dados) {
             'IPÊ': 'IPÊ', 'IPE': 'IPÊ', 'FICUS': 'FICUS', 'ANGELIM': 'ANGELIM',
             'BURITIS': 'BURITIS', 'MANACA': 'MANACÁ', 'MANACÁ': 'MANACÁ'
         };
-        if (dest && dest !== 'Consulte a ACM' && dest !== 'Consulte a recepção' && dest !== 'Direto') {
+        if (dest && dest !== 'CONSULTE A ADM' && dest !== 'Consulte a recepção' && dest !== 'DIRETO') {
             if (/crema[çc][ãa]o/i.test(dest)) {
-                dest = 'Cremação';
+                dest = 'CREMAÇÃO';
             } else if (dest.includes('QD:')) {
                 const matchQd = dest.match(/QD:\s*([^.\n]+)/i);
                 if (matchQd) {
@@ -136,9 +136,9 @@ function exibirDadosHomenagem(dados) {
             }
         } else {
             if (dados.tipo_servico && String(dados.tipo_servico).toUpperCase().includes('CREMA')) {
-                dest = 'Cremação';
+                dest = 'CREMAÇÃO';
             } else {
-                dest = 'Consulte a ACM';
+                dest = 'CONSULTE A ADM';
             }
         }
         elDestino.innerText = dest;
@@ -266,9 +266,9 @@ function formatarDestinoAgenda(destinoTexto, tipoServico) {
         'BURITIS': 'BURITIS', 'MANACA': 'MANACÁ', 'MANACÁ': 'MANACÁ', 'MAGNOLIA': 'MAGNÓLIA', 'MAGNÓLIA': 'MAGNÓLIA'
     };
 
-    if (destinoTexto && destinoTexto !== 'Consulte a ACM' && destinoTexto !== 'Consulte a recepção' && destinoTexto !== 'Direto') {
+    if (destinoTexto && destinoTexto !== 'CONSULTE A ADM' && destinoTexto !== 'Consulte a recepção' && destinoTexto !== 'DIRETO') {
         if (/crema[çc][ãa]o/i.test(destinoTexto)) {
-            return 'Cremação';
+            return 'CREMAÇÃO';
         } else if (destinoTexto.includes('QD:')) {
             const matchQd = destinoTexto.match(/QD:\s*([^.\n]+)/i);
             if (matchQd) {
@@ -287,9 +287,9 @@ function formatarDestinoAgenda(destinoTexto, tipoServico) {
         }
     } else {
         if (tipoServico && String(tipoServico).toUpperCase().includes('CREMA')) {
-            return 'Cremação';
+            return 'CREMAÇÃO';
         }
-        return 'Consulte a ACM';
+        return 'CONSULTE A ADM';
     }
 }
 
