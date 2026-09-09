@@ -552,24 +552,43 @@ function carregarEntradasEmergencia() {
     }
 }
 
+function normalizarTextoParaComparacao(texto) {
+    if (!texto) return '';
+    return String(texto)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase();
+}
+
 function mesclarEmergencia(dadosAPI) {
     if (!Array.isArray(dadosAPI)) dadosAPI = [];
     
     if (dadosAPI.length > 0) {
         let houveExclusao = false;
         const entradasValidas = emergencyEntradas.filter(manual => {
+            const nomeManual = normalizarTextoParaComparacao(manual.nome);
             const numSalaManual = String(manual.sala).replace(/\D/g, '');
             const inicioManual = new Date(manual.data_inicio);
             const fimManual = new Date(manual.data_fim);
             
             const conflitoComAPI = dadosAPI.some(apiItem => {
+                const nomeAPI = normalizarTextoParaComparacao(apiItem.nome);
+                
+                // 1. Mesmo falecido já retornado pela API oficial
+                if (nomeManual && nomeAPI && (nomeManual === nomeAPI || nomeAPI.includes(nomeManual) || nomeManual.includes(nomeAPI))) {
+                    return true;
+                }
+
+                // 2. Mesma sala com sobreposição de horário
                 const numSalaAPI = String(apiItem.sala).replace(/\D/g, '');
-                if (!numSalaManual || numSalaManual !== numSalaAPI) return false;
+                if (numSalaManual && numSalaAPI && numSalaManual === numSalaAPI) {
+                    const inicioAPI = new Date(apiItem.data_inicio);
+                    const fimAPI = new Date(apiItem.data_fim);
+                    return (inicioManual < fimAPI && fimManual > inicioAPI);
+                }
                 
-                const inicioAPI = new Date(apiItem.data_inicio);
-                const fimAPI = new Date(apiItem.data_fim);
-                
-                return (inicioManual < fimAPI && fimManual > inicioAPI);
+                return false;
             });
             
             if (conflitoComAPI) houveExclusao = true;
@@ -585,7 +604,17 @@ function mesclarEmergencia(dadosAPI) {
         }
     }
     
-    return [...dadosAPI, ...emergencyEntradas.map((item, index) => ({ ...item, isEmergencia: true, emergenciaIndex: index }))];
+    // Concatena e aplica garantia final de não duplicar nomes idênticos no painel
+    const resultado = [...dadosAPI];
+    emergencyEntradas.forEach((item, index) => {
+        const nomeManual = normalizarTextoParaComparacao(item.nome);
+        const jaExiste = resultado.some(r => normalizarTextoParaComparacao(r.nome) === nomeManual);
+        if (!jaExiste) {
+            resultado.push({ ...item, isEmergencia: true, emergenciaIndex: index });
+        }
+    });
+
+    return resultado;
 }
 
 function parseCSV(csvText) {
