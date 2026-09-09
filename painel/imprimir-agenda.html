@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agenda Diária - Bosque da Esperança</title>
+    <title>Agenda Diária de Cerimônias - Bosque da Esperança</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -13,7 +13,7 @@
             padding: 24px;
         }
         .container {
-            max-width: 1000px;
+            max-width: 1080px;
             margin: 0 auto;
             background: #FFFFFF;
             padding: 32px;
@@ -43,16 +43,53 @@
             margin-top: 4px;
             font-weight: 500;
         }
-        .actions-bar {
+
+        /* Barra de Controle de Datas e Ações */
+        .toolbar {
             display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
             gap: 12px;
+            background: #EDF2F7;
+            padding: 12px 16px;
+            border-radius: 8px;
             margin-bottom: 20px;
         }
+        .nav-date-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .date-picker-input {
+            border: 1px solid #CBD5E0;
+            border-radius: 6px;
+            padding: 7px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2D3748;
+            background: #FFFFFF;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .date-picker-input:focus {
+            border-color: #01813D;
+            box-shadow: 0 0 0 2px rgba(1, 129, 61, 0.2);
+        }
+
+        .actions-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
         .btn {
             background: #01813D;
             color: #FFFFFF;
             border: none;
-            padding: 8px 16px;
+            padding: 8px 14px;
             font-size: 13px;
             font-weight: 600;
             border-radius: 6px;
@@ -61,11 +98,44 @@
             align-items: center;
             gap: 6px;
             text-decoration: none;
-            transition: background 0.2s ease;
+            transition: all 0.2s ease;
         }
         .btn:hover { background: #01622e; }
+        .btn:active { transform: scale(0.98); }
         .btn-secondary { background: #4A5568; }
         .btn-secondary:hover { background: #2D3748; }
+        .btn-outline {
+            background: #FFFFFF;
+            color: #4A5568;
+            border: 1px solid #CBD5E0;
+        }
+        .btn-outline:hover {
+            background: #F7FAFC;
+            border-color: #A0AEC0;
+            color: #1A202C;
+        }
+        .btn-outline.active {
+            background: #01813D;
+            color: #FFFFFF;
+            border-color: #01813D;
+        }
+
+        .btn-action-edit {
+            background: #ED8936;
+            color: #FFFFFF;
+            border: none;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.2s;
+        }
+        .btn-action-edit:hover { background: #DD6B20; }
+
         .resumo-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -89,6 +159,7 @@
             color: #718096;
             text-transform: uppercase;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -131,6 +202,21 @@
         .status-previsto { background: #EBF8FF; color: #2B6CB0; }
         .status-andamento { background: #C6F6D5; color: #22543D; }
         .status-encerrado { background: #EDF2F7; color: #718096; }
+
+        .badge-editado {
+            display: inline-block;
+            background: #FEEBC8;
+            color: #C05621;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 5px;
+            border-radius: 4px;
+            margin-left: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            vertical-align: middle;
+        }
+
         .footer-print {
             margin-top: 32px;
             text-align: center;
@@ -139,10 +225,147 @@
             border-top: 1px solid #E2E8F0;
             padding-top: 12px;
         }
+
+        /* Toast de Notificação */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #2D3748;
+            color: #FFFFFF;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 9999;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .toast.success { background: #01813D; }
+        .toast.error { background: #E53E3E; }
+
+        /* Modal de Edição */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .modal-backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-card {
+            background: #FFFFFF;
+            width: 100%;
+            max-width: 580px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+            transform: scale(0.95);
+            transition: transform 0.2s ease;
+        }
+        .modal-backdrop.open .modal-card {
+            transform: scale(1);
+        }
+        .modal-header {
+            background: #01813D;
+            color: #FFFFFF;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-header h3 {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            color: #FFFFFF;
+            font-size: 20px;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .modal-info-box {
+            background: #EBF8FF;
+            border-left: 4px solid #3182CE;
+            padding: 10px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #2B6CB0;
+            margin-bottom: 16px;
+        }
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #4A5568;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 13px;
+            border: 1px solid #CBD5E0;
+            border-radius: 6px;
+            outline: none;
+            color: #2D3748;
+            background: #FFFFFF;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: #01813D;
+            box-shadow: 0 0 0 2px rgba(1, 129, 61, 0.2);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .modal-footer {
+            background: #F7FAFC;
+            padding: 14px 20px;
+            border-top: 1px solid #E2E8F0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
         @media print {
             body { background: #FFFFFF; padding: 0; }
             .container { box-shadow: none; padding: 0; max-width: 100%; }
-            .actions-bar { display: none !important; }
+            .toolbar, .col-acoes, .btn-action-edit, .modal-backdrop, .toast { display: none !important; }
             thead th {
                 background: #01813D !important;
                 color: #FFFFFF !important;
@@ -167,9 +390,19 @@
             </div>
         </header>
 
-        <div class="actions-bar">
-            <button class="btn" onclick="window.print()">Imprimir / Salvar em PDF</button>
-            <a class="btn btn-secondary" href="/api/exportar/excel" download>Baixar em Excel (.xlsx)</a>
+        <!-- Barra de Navegação de Datas e Ações -->
+        <div class="toolbar">
+            <div class="nav-date-group">
+                <button class="btn btn-outline" id="btn-dia-anterior" onclick="mudarDataRelativa(-1)" title="Ver dia anterior">◀ Anterior</button>
+                <input type="date" id="seletor-data" class="date-picker-input" onchange="aoSelecionarData(this.value)">
+                <button class="btn btn-outline" id="btn-hoje" onclick="irParaHoje()" title="Voltar para a data de hoje">Hoje</button>
+                <button class="btn btn-outline" id="btn-dia-seguinte" onclick="mudarDataRelativa(1)" title="Ver dia seguinte">Próximo ▶</button>
+            </div>
+
+            <div class="actions-group">
+                <button class="btn" onclick="window.print()">🖨️ Imprimir / PDF</button>
+                <a class="btn btn-secondary" id="btn-excel" href="/api/exportar/excel" download>📥 Baixar em Excel (.xlsx)</a>
+            </div>
         </div>
 
         <div class="resumo-cards">
@@ -201,11 +434,12 @@
                     <th>Horário</th>
                     <th>Local / Quadra</th>
                     <th>Status</th>
+                    <th class="col-acoes" style="text-align: center; width: 80px;">Ações</th>
                 </tr>
             </thead>
             <tbody id="tabela-corpo">
                 <tr>
-                    <td colspan="7" style="text-align: center; padding: 24px; color: #718096;">Carregando serviços do dia...</td>
+                    <td colspan="8" style="text-align: center; padding: 24px; color: #718096;">Carregando serviços...</td>
                 </tr>
             </tbody>
         </table>
@@ -214,6 +448,107 @@
             Bosque da Esperança Parque Renascer • Relatório gerado automaticamente pelo Sistema de Sinalização Digital (SSD)
         </footer>
     </div>
+
+    <!-- Modal de Edição de Evento -->
+    <div class="modal-backdrop" id="modal-edicao">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>✏️ Editar Informações do Evento</h3>
+                <button type="button" class="modal-close-btn" onclick="fecharModalEdicao()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-info-box">
+                    💡 As alterações manuais sobrepõem os dados automáticos da Intuo e do Bubble e são salvas no banco de dados com segurança.
+                </div>
+                <form id="form-edicao" onsubmit="salvarEdicao(event)">
+                    <input type="hidden" id="edit-chave">
+                    <input type="hidden" id="edit-id-intuo">
+                    <input type="hidden" id="edit-id-memorial">
+
+                    <div class="form-group">
+                        <label for="edit-nome">Nome do Homenageado</label>
+                        <input type="text" id="edit-nome" required placeholder="Nome completo do falecido">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-sala">Sala</label>
+                            <select id="edit-sala">
+                                <option value="Direto">Direto (Sem Sala)</option>
+                                <option value="1">Sala 1</option>
+                                <option value="2">Sala 2</option>
+                                <option value="3">Sala 3 (Imersiva)</option>
+                                <option value="4">Sala 4</option>
+                                <option value="5">Sala 5</option>
+                                <option value="6">Sala 6</option>
+                                <option value="7">Sala 7</option>
+                                <option value="8">Sala 8</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-tipo">Tipo de Serviço</label>
+                            <select id="edit-tipo">
+                                <option value="VELÓRIO">VELÓRIO</option>
+                                <option value="VELÓRIO (CREMAÇÃO)">VELÓRIO (CREMAÇÃO)</option>
+                                <option value="CREMAÇÃO">CREMAÇÃO</option>
+                                <option value="SEPULTAMENTO DIRETO">SEPULTAMENTO DIRETO</option>
+                                <option value="SEPULTAMENTO">SEPULTAMENTO</option>
+                                <option value="INUMAÇÃO DIRETA">INUMAÇÃO DIRETA</option>
+                                <option value="INUMAÇÃO">INUMAÇÃO</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-inicio">Data / Hora de Início</label>
+                            <input type="datetime-local" id="edit-inicio" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-fim">Data / Hora de Término</label>
+                            <input type="datetime-local" id="edit-fim" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-destino">Local / Quadra / Destino</label>
+                        <input type="text" id="edit-destino" placeholder="Ex: PAINEIRAS, BOUGAINVILLE, Cremação, etc.">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-velorio-online">Link Velório On-line (Transmissão)</label>
+                        <input type="url" id="edit-velorio-online" placeholder="https://www.adiau.com.br/embed/?hash=...">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-visivel">Exibir nos Painéis / TVs</label>
+                            <select id="edit-visivel">
+                                <option value="1">Sim (Exibir nas TVs)</option>
+                                <option value="0">Não (Ocultar das TVs)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-foto">URL da Foto (Opcional)</label>
+                            <input type="text" id="edit-foto" placeholder="https://...">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" id="btn-restaurar" onclick="restaurarOriginal()" style="color: #C53030; border-color: #FEB2B2;">
+                    🔄 Restaurar Original
+                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn btn-secondary" onclick="fecharModalEdicao()">Cancelar</button>
+                    <button type="submit" form="form-edicao" class="btn" id="btn-salvar-modal">💾 Salvar Alterações</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
 
     <script>
         const mapaNomesQuadras = {
@@ -224,11 +559,21 @@
             'BURITIS': 'BURITIS', 'MANACA': 'MANACÁ', 'MANACÁ': 'MANACÁ', 'MAGNOLIA': 'MAGNÓLIA', 'MAGNÓLIA': 'MAGNÓLIA'
         };
 
+        // Estado da aplicação
+        let dataAtualSelecionada = obterDataHojeISO();
+        let listaEventosCache = [];
+        let eventoSendoEditado = null;
+
+        function obterDataHojeISO() {
+            const agora = new Date();
+            return agora.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+        }
+
         function formatarDestino(destinoRaw, tipoServico) {
             let s = destinoRaw ? String(destinoRaw).trim() : '';
-            if (!s || s === 'Consulte a ACM' || s === 'Consulte a recepção' || s === 'Direto' || s === '-' || s === 'null' || s === 'N/D') {
+            if (!s || s === 'Consulte a ACM' || s === 'Consulte a recepção' || s === 'Consulte a ADM' || s === 'Direto' || s === '-' || s === 'null' || s === 'N/D') {
                 if (tipoServico && String(tipoServico).toUpperCase().includes('CREMA')) return 'Cremação';
-                return 'Consulte a ACM';
+                return 'Consulte a ADM';
             }
             if (/crema[çc][ãa]o/i.test(s)) return 'Cremação';
             if (s.includes('QD:')) {
@@ -259,6 +604,24 @@
             return limpo.includes('T') ? limpo.split('T')[1].slice(0, 5) : limpo.slice(0, 5);
         }
 
+        function paraDatetimeLocalString(str) {
+            if (!str) return '';
+            const s = String(str).trim();
+            if (s.includes('T') && s.length >= 16) {
+                return s.slice(0, 16);
+            }
+            const d = new Date(str);
+            if (!isNaN(d.getTime())) {
+                const ano = d.getFullYear();
+                const mes = String(d.getMonth() + 1).padStart(2, '0');
+                const dia = String(d.getDate()).padStart(2, '0');
+                const h = String(d.getHours()).padStart(2, '0');
+                const m = String(d.getMinutes()).padStart(2, '0');
+                return `${ano}-${mes}-${dia}T${h}:${m}`;
+            }
+            return '';
+        }
+
         function calcularStatus(dataInicio, dataFim) {
             if (!dataInicio && !dataFim) {
                 return { texto: 'Agendado', class: 'status-previsto' };
@@ -279,17 +642,72 @@
             return { texto: 'Previsto', class: 'status-previsto' };
         }
 
-        async function carregarRelatorio() {
+        function mostrarToast(mensagem, tipo = 'success') {
+            const toast = document.getElementById('toast');
+            toast.innerText = mensagem;
+            toast.className = `toast show ${tipo}`;
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 3500);
+        }
+
+        // Navegação de Datas
+        function mudarDataRelativa(dias) {
+            const [ano, mes, dia] = dataAtualSelecionada.split('-').map(Number);
+            const dataObj = new Date(ano, mes - 1, dia);
+            dataObj.setDate(dataObj.getDate() + dias);
+            
+            const novoAno = dataObj.getFullYear();
+            const novoMes = String(dataObj.getMonth() + 1).padStart(2, '0');
+            const novoDia = String(dataObj.getDate()).padStart(2, '0');
+            
+            aoSelecionarData(`${novoAno}-${novoMes}-${novoDia}`);
+        }
+
+        function irParaHoje() {
+            aoSelecionarData(obterDataHojeISO());
+        }
+
+        function aoSelecionarData(dataStr) {
+            if (!dataStr) return;
+            dataAtualSelecionada = dataStr;
+            document.getElementById('seletor-data').value = dataStr;
+            
+            // Atualiza destaque do botão "Hoje"
+            const hojeISO = obterDataHojeISO();
+            const btnHoje = document.getElementById('btn-hoje');
+            if (dataStr === hojeISO) {
+                btnHoje.classList.add('active');
+            } else {
+                btnHoje.classList.remove('active');
+            }
+
+            // Atualiza link do Excel
+            document.getElementById('btn-excel').href = `/api/exportar/excel?data=${dataStr}`;
+
+            carregarRelatorio(dataStr);
+        }
+
+        async function carregarRelatorio(dataFiltro = dataAtualSelecionada) {
             try {
-                const hoje = new Date();
-                document.getElementById('data-emissao').innerText = 'Emissão: ' + hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }) + ' às ' + hoje.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-                const res = await fetch('/api/hall');
-                if (!res.ok) throw new Error('Erro ao carregar dados');
-                const lista = await res.json();
-
                 const corpo = document.getElementById('tabela-corpo');
-                const listaValida = (Array.isArray(lista) ? lista : []).filter(item => {
+                corpo.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: #718096;">Carregando serviços da agenda...</td></tr>';
+
+                // Data de Emissão e Título de Referência
+                const agora = new Date();
+                const [ano, mes, dia] = dataFiltro.split('-').map(Number);
+                const dataReferenciaObj = new Date(ano, mes - 1, dia);
+
+                const dataFmt = dataReferenciaObj.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+                const horaFmt = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                document.getElementById('data-emissao').innerText = `Agenda de ${dataFmt} • Emissão: ${horaFmt}`;
+
+                const res = await fetch(`/api/hall?data=${encodeURIComponent(dataFiltro)}`);
+                if (!res.ok) throw new Error('Erro ao carregar dados da agenda');
+                const lista = await res.json();
+                listaEventosCache = Array.isArray(lista) ? lista : [];
+
+                const listaValida = listaEventosCache.filter(item => {
                     const tipo = String(item.tipo_servico || '').toUpperCase();
                     const dest = String(item.destino || '').toUpperCase();
                     const salaRaw = item.sala ? String(item.sala).trim().toLowerCase() : '';
@@ -305,11 +723,15 @@
                 });
 
                 if (listaValida.length === 0) {
-                    corpo.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 24px;">Nenhum serviço agendado para hoje.</td></tr>';
+                    corpo.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 24px; color: #718096;">Nenhum serviço agendado para o dia <strong>${dataReferenciaObj.toLocaleDateString('pt-BR')}</strong>.</td></tr>`;
+                    document.getElementById('total-servicos').innerText = 0;
+                    document.getElementById('total-velorios').innerText = 0;
+                    document.getElementById('total-cremacoes').innerText = 0;
+                    document.getElementById('total-sepultamentos').innerText = 0;
                     return;
                 }
 
-                // Ordenação idêntica ao painel principal
+                // Ordenação: status em andamento primeiro, depois horário
                 const ordemStatus = { 'Encerrando': 0, 'Em andamento': 1, 'Previsto': 2, 'Encerrado': 3 };
                 listaValida.sort((a, b) => {
                     const sa = calcularStatus(a.data_inicio, a.data_fim).texto;
@@ -364,15 +786,22 @@
                         tipoExibicao = 'CREMAÇÃO';
                     }
 
+                    const badgeEditadoHtml = item.editado_manualmente === 1 ? '<span class="badge-editado" title="Este evento possui alterações manuais salvas">Editado</span>' : '';
+
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td class="col-num">${index + 1}</td>
-                        <td class="col-nome">${item.nome || 'Homenageado'}</td>
+                        <td class="col-nome">${item.nome || 'Homenageado'} ${badgeEditadoHtml}</td>
                         <td class="col-sala"><span class="badge-sala">${salaFormatada}</span></td>
                         <td><span class="badge-tipo">${tipoExibicao}</span></td>
                         <td><strong>${horarioTexto}</strong></td>
                         <td><strong>${destinoTexto}</strong></td>
                         <td><span class="badge-status ${status.class}">${status.texto}</span></td>
+                        <td class="col-acoes" style="text-align: center;">
+                            <button type="button" class="btn-action-edit" onclick="abrirModalEdicaoIndex(${index})" title="Editar informações deste evento">
+                                ✏️ Editar
+                            </button>
+                        </td>
                     `;
                     corpo.appendChild(tr);
                 });
@@ -389,10 +818,193 @@
 
             } catch (err) {
                 console.error(err);
+                mostrarToast('Erro ao carregar dados da agenda: ' + err.message, 'error');
             }
         }
 
-        document.addEventListener('DOMContentLoaded', carregarRelatorio);
+        // Funções do Modal de Edição
+        function abrirModalEdicaoIndex(index) {
+            const item = listaEventosCache[index];
+            if (!item) return;
+            eventoSendoEditado = item;
+
+            document.getElementById('edit-chave').value = item.chave_cruzamento || '';
+            document.getElementById('edit-id-intuo').value = item.id_intuo || '';
+            document.getElementById('edit-id-memorial').value = item.id_memorial || '';
+
+            document.getElementById('edit-nome').value = item.nome || '';
+            
+            // Sala
+            const salaRaw = item.sala ? String(item.sala).trim() : 'Direto';
+            const selectSala = document.getElementById('edit-sala');
+            let salaEncontrada = false;
+            for (let opt of selectSala.options) {
+                if (opt.value.toLowerCase() === salaRaw.toLowerCase() || (salaRaw === '3' && opt.value === '3')) {
+                    opt.selected = true;
+                    salaEncontrada = true;
+                    break;
+                }
+            }
+            if (!salaEncontrada) {
+                selectSala.value = 'Direto';
+            }
+
+            // Tipo de Serviço
+            const tipoRaw = item.tipo_servico || 'VELÓRIO';
+            const selectTipo = document.getElementById('edit-tipo');
+            let tipoEncontrado = false;
+            for (let opt of selectTipo.options) {
+                if (opt.value.toUpperCase() === tipoRaw.toUpperCase()) {
+                    opt.selected = true;
+                    tipoEncontrado = true;
+                    break;
+                }
+            }
+            if (!tipoEncontrado) selectTipo.value = 'VELÓRIO';
+
+            // Datas
+            document.getElementById('edit-inicio').value = paraDatetimeLocalString(item.data_inicio);
+            document.getElementById('edit-fim').value = paraDatetimeLocalString(item.data_fim);
+
+            // Destino e Links
+            document.getElementById('edit-destino').value = item.destino || '';
+            document.getElementById('edit-velorio-online').value = item.velorio_online || '';
+            document.getElementById('edit-foto').value = item.foto || '';
+            document.getElementById('edit-visivel').value = item.visivel === 0 ? '0' : '1';
+
+            // Botão restaurar original (mostra se editado ou se tem origem Intuo/Bubble)
+            const btnRestaurar = document.getElementById('btn-restaurar');
+            btnRestaurar.style.display = (item.editado_manualmente === 1 || item.id_intuo || item.id_memorial) ? 'inline-flex' : 'none';
+
+            document.getElementById('modal-edicao').classList.add('open');
+        }
+
+        function fecharModalEdicao() {
+            document.getElementById('modal-edicao').classList.remove('open');
+            eventoSendoEditado = null;
+        }
+
+        async function salvarEdicao(event) {
+            event.preventDefault();
+            const btnSalvar = document.getElementById('btn-salvar-modal');
+            btnSalvar.disabled = true;
+            btnSalvar.innerText = 'Salvando...';
+
+            try {
+                const chaveCruzamento = document.getElementById('edit-chave').value;
+                const nomeFalecido = document.getElementById('edit-nome').value.trim();
+                const sala = document.getElementById('edit-sala').value;
+                const tipoServico = document.getElementById('edit-tipo').value;
+                const dataInicio = document.getElementById('edit-inicio').value;
+                const dataFim = document.getElementById('edit-fim').value;
+                const destino = document.getElementById('edit-destino').value.trim();
+                const velorioOnline = document.getElementById('edit-velorio-online').value.trim();
+                const fotoUrl = document.getElementById('edit-foto').value.trim();
+                const visivel = parseInt(document.getElementById('edit-visivel').value, 10);
+                const idIntuo = document.getElementById('edit-id-intuo').value;
+                const idMemorial = document.getElementById('edit-id-memorial').value;
+
+                const payload = {
+                    chave_cruzamento: chaveCruzamento,
+                    nome_falecido: nomeFalecido,
+                    sala: sala,
+                    tipo_servico: tipoServico,
+                    data_inicio: dataInicio,
+                    data_fim: dataFim,
+                    destino: destino,
+                    velorio_online: velorioOnline || null,
+                    foto_url: fotoUrl || null,
+                    visivel: visivel,
+                    id_intuo: idIntuo || null,
+                    id_memorial: idMemorial || null,
+                    data_referencia: dataAtualSelecionada
+                };
+
+                const res = await fetch('/api/eventos/editar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const resposta = await res.json();
+                if (!res.ok || !resposta.sucesso) {
+                    throw new Error(resposta.erro || 'Erro ao salvar alterações');
+                }
+
+                fecharModalEdicao();
+                mostrarToast('✅ Evento atualizado com sucesso!', 'success');
+                await carregarRelatorio(dataAtualSelecionada);
+            } catch (err) {
+                console.error(err);
+                mostrarToast('❌ ' + err.message, 'error');
+            } finally {
+                btnSalvar.disabled = false;
+                btnSalvar.innerText = '💾 Salvar Alterações';
+            }
+        }
+
+        async function restaurarOriginal() {
+            if (!eventoSendoEditado) return;
+            if (!confirm(`Deseja remover as alterações manuais e restaurar os dados originais da Intuo/Bubble para "${eventoSendoEditado.nome}"?`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/eventos/restaurar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chave_cruzamento: eventoSendoEditado.chave_cruzamento || eventoSendoEditado.nome,
+                        data_referencia: dataAtualSelecionada
+                    })
+                });
+
+                const resposta = await res.json();
+                if (!res.ok || !resposta.sucesso) {
+                    throw new Error(resposta.erro || 'Erro ao restaurar dados');
+                }
+
+                fecharModalEdicao();
+                mostrarToast('🔄 Dados originais restaurados com sucesso!', 'success');
+                await carregarRelatorio(dataAtualSelecionada);
+            } catch (err) {
+                console.error(err);
+                mostrarToast('❌ ' + err.message, 'error');
+            }
+        }
+
+        // Conexão SSE para atualizações automáticas em tempo real
+        function conectarSSE() {
+            try {
+                const eventSource = new EventSource('/api/eventos');
+                eventSource.onmessage = (event) => {
+                    console.log('⚡ [SSE] Atualização de dados recebida');
+                    // Se estiver visualizando a data de hoje, atualiza automaticamente
+                    if (dataAtualSelecionada === obterDataHojeISO()) {
+                        carregarRelatorio(dataAtualSelecionada);
+                    }
+                };
+                eventSource.onerror = () => {
+                    eventSource.close();
+                    setTimeout(conectarSSE, 10000);
+                };
+            } catch (e) {
+                console.warn('SSE indisponível:', e.message);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const dataParam = urlParams.get('data');
+            
+            if (dataParam && /^\d{4}-\d{2}-\d{2}$/.test(dataParam)) {
+                aoSelecionarData(dataParam);
+            } else {
+                aoSelecionarData(obterDataHojeISO());
+            }
+
+            conectarSSE();
+        });
     </script>
 </body>
 </html>

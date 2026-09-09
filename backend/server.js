@@ -16,6 +16,8 @@ const {
     inicializarBanco,
     salvarEventosIntuo,
     salvarEventosMemorial,
+    salvarEdicaoEvento,
+    removerEdicaoEvento,
     executarCruzamentoSQLite,
     obterEventosHall,
     obterEventoPorSala
@@ -405,7 +407,7 @@ app.get('/sala/:id', (req, res) => {
 app.get('/api/exportar/excel', async (req, res) => {
     try {
         const dataAlvo = req.query.data || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
-        const dados = await obterEventosHall();
+        const dados = await obterEventosHall(dataAlvo);
         
         const formatarHoraUniversal = (str) => {
             if (!str) return '--:--';
@@ -459,7 +461,7 @@ app.get('/api/exportar/excel', async (req, res) => {
                 'Sala': salaExibicao,
                 'Tipo de Serviço': item.tipo_servico || 'VELÓRIO',
                 'Horário': horario,
-                'Local / Quadra': item.destino || 'Consulte a ACM',
+                'Local / Quadra': item.destino || 'Consulte a ADM',
                 'Origem': item.origem_dados || 'SISTEMA'
             };
         });
@@ -491,14 +493,54 @@ app.get('/api/exportar/excel', async (req, res) => {
     }
 });
 
-// Rota principal do Painel do Hall (Consome dados cruzados do SQLite)
+// Rota principal do Painel do Hall e Agenda (Consome dados cruzados com suporte a query ?data=YYYY-MM-DD)
 app.get('/api/hall', async (req, res) => {
     try {
-        const dados = await obterEventosHall();
+        const dataAlvo = req.query.data;
+        const dados = await obterEventosHall(dataAlvo);
         res.json(dados);
     } catch (e) {
         console.error("❌ [API /api/hall] Erro ao consultar SQLite:", e.message);
         res.json(intuoCache || []);
+    }
+});
+
+// Rota para salvar edição manual de eventos (sobrescreve campos com persistência segura)
+app.post('/api/eventos/editar', async (req, res) => {
+    try {
+        const dados = req.body;
+        if (!dados || (!dados.chave_cruzamento && !dados.nome_falecido)) {
+            return res.status(400).json({ sucesso: false, erro: "Chave ou nome do homenageado é obrigatório para edição." });
+        }
+
+        const resultado = await salvarEdicaoEvento(dados);
+        
+        // Re-executa consolidação e avisa as TVs
+        const dataAlvo = dados.data_referencia || (dados.data_inicio ? dados.data_inicio.slice(0, 10) : null);
+        await executarPainelSSD(dataAlvo, false);
+
+        res.json({ sucesso: true, mensagem: "Evento editado com sucesso!", dados: resultado });
+    } catch (e) {
+        console.error("❌ [API /api/eventos/editar] Erro:", e.message);
+        res.status(500).json({ sucesso: false, erro: e.message });
+    }
+});
+
+// Rota para restaurar padrão original da Intuo/Bubble (remove override manual)
+app.post('/api/eventos/restaurar', async (req, res) => {
+    try {
+        const { chave_cruzamento, data_referencia } = req.body || {};
+        if (!chave_cruzamento) {
+            return res.status(400).json({ sucesso: false, erro: "chave_cruzamento é obrigatória" });
+        }
+
+        const resultado = await removerEdicaoEvento(chave_cruzamento);
+        await executarPainelSSD(data_referencia, false);
+
+        res.json({ sucesso: true, mensagem: "Edição revertida para os dados originais da Intuo/Bubble!", dados: resultado });
+    } catch (e) {
+        console.error("❌ [API /api/eventos/restaurar] Erro:", e.message);
+        res.status(500).json({ sucesso: false, erro: e.message });
     }
 });
 

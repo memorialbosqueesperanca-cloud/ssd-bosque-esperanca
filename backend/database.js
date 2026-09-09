@@ -79,6 +79,30 @@ function inicializarBanco() {
                     data_falecimento TEXT,
                     status_evento TEXT,
                     origem_dados TEXT,
+                    editado_manualmente INTEGER DEFAULT 0,
+                    visivel INTEGER DEFAULT 1,
+                    atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+
+            db.run(`
+                CREATE TABLE IF NOT EXISTS eventos_edicoes (
+                    id_edicao INTEGER PRIMARY KEY AUTOINCREMENT,
+                    chave_cruzamento TEXT UNIQUE,
+                    id_intuo TEXT,
+                    id_memorial TEXT,
+                    nome_falecido TEXT,
+                    sala TEXT,
+                    sala_normalizada TEXT,
+                    destino TEXT,
+                    tipo_servico TEXT,
+                    data_inicio TEXT,
+                    data_fim TEXT,
+                    velorio_online TEXT,
+                    foto_url TEXT,
+                    link_memorial TEXT,
+                    visivel INTEGER DEFAULT 1,
+                    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
                     atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             `);
@@ -90,9 +114,12 @@ function inicializarBanco() {
             db.run(`ALTER TABLE painel_consolidado ADD COLUMN qr_code_memorial TEXT`, () => {});
             db.run(`ALTER TABLE painel_consolidado ADD COLUMN link_memorial TEXT`, () => {});
             db.run(`ALTER TABLE painel_consolidado ADD COLUMN velorio_online TEXT`, () => {});
+            db.run(`ALTER TABLE painel_consolidado ADD COLUMN editado_manualmente INTEGER DEFAULT 0`, () => {});
+            db.run(`ALTER TABLE painel_consolidado ADD COLUMN visivel INTEGER DEFAULT 1`, () => {});
 
             db.run(`CREATE INDEX IF NOT EXISTS idx_intuo_data ON intuo_eventos(data_inicio, data_referencia)`);
             db.run(`CREATE INDEX IF NOT EXISTS idx_memorial_data ON memorial_eventos(data_inicio)`);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_edicoes_chave ON eventos_edicoes(chave_cruzamento)`);
             db.run(`CREATE INDEX IF NOT EXISTS idx_consolidado_sala ON painel_consolidado(sala_normalizada, data_inicio)`, (err) => {
                 if (err) return reject(err);
                 resolve();
@@ -898,216 +925,289 @@ function executarCruzamentoSQLite(dataReferencia) {
             db.all("SELECT * FROM intuo_eventos WHERE status != 'Cancelado'", [], (errIntuo, intuos) => {
                 if (errIntuo) return reject(errIntuo);
 
-                // Filtra estritamente pelo dia do evento no fuso do Brasil (data_inicio ou data_fim)
-                const memoriaisDoDia = (memoriais || []).filter(m => {
-                    const dtIni = extrairDataBrasil(m.data_inicio);
-                    const dtFim = extrairDataBrasil(m.data_fim);
-                    return dtIni === dataRef || dtFim === dataRef;
-                });
+                db.all("SELECT * FROM eventos_edicoes", [], (errEd, edicoes) => {
+                    if (errEd) return reject(errEd);
 
-                const intuosDoDia = (intuos || []).filter(i => {
-                    const dtIni = extrairDataBrasil(i.data_inicio);
-                    const dtFim = extrairDataBrasil(i.data_fim);
-                    return dtIni === dataRef || dtFim === dataRef;
-                });
-
-                const mapaPorPessoa = new Map();
-
-                // 1. Agrupa memoriais do dia (Prioridade 1: Dados do Bubble)
-                memoriaisDoDia.forEach(m => {
-                    const nomeLimpo = normalizarTexto(m.nome_falecido);
-                    const chave = nomeLimpo;
-
-                    const destinoMemorial = formatarLocalCemiterio(m.local_sepultura);
-                    const salaMemorial = (m.sala_cerimonia && m.sala_cerimonia !== 'N/D' && m.sala_cerimonia !== '-' && m.sala_cerimonia !== 'null') ? m.sala_cerimonia : 'Direto';
-
-                    mapaPorPessoa.set(chave, {
-                        chave_cruzamento: chave,
-                        id_intuo: null,
-                        id_memorial: m.id_memorial,
-                        nome_falecido: m.nome_falecido,
-                        sala: salaMemorial,
-                        sala_normalizada: normalizarSala(salaMemorial),
-                        foto_url: m.foto_url,
-                        qr_code_memorial: m.qr_code_memorial,
-                        link_memorial: m.link_memorial,
-                        velorio_online: null,
-                        destino: destinoMemorial,
-                        tipo_servico: 'VELÓRIO',
-                        data_inicio: m.data_inicio,
-                        data_fim: m.data_fim,
-                        data_nascimento: m.data_nascimento || '--.--.----',
-                        data_falecimento: m.data_falecimento || '--.--.----',
-                        status_evento: 'Ativo',
-                        origem_dados: 'MEMORIAL'
+                    // Filtra estritamente pelo dia do evento no fuso do Brasil (data_inicio ou data_fim)
+                    const memoriaisDoDia = (memoriais || []).filter(m => {
+                        const dtIni = extrairDataBrasil(m.data_inicio);
+                        const dtFim = extrairDataBrasil(m.data_fim);
+                        return dtIni === dataRef || dtFim === dataRef;
                     });
-                });
 
-                // 2. Ordena Intuo: Velórios com salas numéricas primeiro, depois velórios gerais, depois Sepultamento/Cremação, depois buffet/apoio
-                const intuosOrdenados = [...intuosDoDia].sort((a, b) => {
-                    const peso = (item) => {
-                        let raw = {};
-                        try { raw = JSON.parse(item.raw_json || '{}'); } catch(e) {}
-                        const grupo = (raw.ch_nome_grupo_serviço || '').toUpperCase();
-                        const tipo = (item.tipo_servico || '').toUpperCase();
-                        const recurso = String(item.sala_recurso || '').toUpperCase();
-                        const ehSalaNumerica = /sala\s*\d+|\b\d+\b/i.test(recurso) && !recurso.includes('IMERSIVA');
-                        
-                        if (ehSalaNumerica) return 1;
-                        if (grupo.includes('VELÓRIO') || (item.sala_recurso && item.sala_recurso !== 'Direto')) return 2;
-                        if (grupo.includes('SEPULTAMENTO') || tipo.includes('SEPULTAMENTO') || tipo.includes('CREMA')) return 3;
-                        return 4;
-                    };
-                    return peso(a) - peso(b);
-                });
+                    const intuosDoDia = (intuos || []).filter(i => {
+                        const dtIni = extrairDataBrasil(i.data_inicio);
+                        const dtFim = extrairDataBrasil(i.data_fim);
+                        return dtIni === dataRef || dtFim === dataRef;
+                    });
 
-                // 3. Cruza com os eventos da Intuo do dia
-                intuosOrdenados.forEach(i => {
-                    const nomeLimpo = normalizarTexto(i.nome_falecido);
-                    const chave = nomeLimpo;
+                    const mapaPorPessoa = new Map();
 
-                    let raw = {};
-                    try { raw = JSON.parse(i.raw_json || '{}'); } catch(e) {}
-                    const grupoServico = (raw.ch_nome_grupo_serviço || '').toUpperCase();
-                    const nomeServico = (raw.ch_nome_serviço || '').toUpperCase();
-                    const ehBuffetOuApoio = grupoServico.includes('BUFFET') || nomeServico.includes('KIT LANCHE') || nomeServico.includes('CAFETERIA');
+                    // 1. Agrupa memoriais do dia (Prioridade 1: Dados do Bubble)
+                    memoriaisDoDia.forEach(m => {
+                        const nomeLimpo = normalizarTexto(m.nome_falecido);
+                        const chave = nomeLimpo;
 
-                    const ehVelorio = (grupoServico.includes('VELÓRIO') || nomeServico.includes('SALA DE CERIMÔNIA') || (i.sala_recurso && i.sala_recurso !== 'Direto')) && !ehBuffetOuApoio;
-                    const ehCremacao = (i.tipo_servico && i.tipo_servico.includes('CREMA')) || nomeServico.includes('CREMAÇÃO');
-                    const ehSepultamento = (grupoServico.includes('SEPULTAMENTO') || (i.tipo_servico && (i.tipo_servico.includes('SEPULTAMENTO') || i.tipo_servico.includes('INUMAÇÃO'))));
-
-                    if (mapaPorPessoa.has(chave)) {
-                        const reg = mapaPorPessoa.get(chave);
-                        reg.id_intuo = i.id_intuo || reg.id_intuo;
-                        reg.origem_dados = reg.id_memorial ? 'CRUZADO (MEMORIAL + INTUO)' : 'INTUO';
-
-                        if (i.velorio_online) {
-                            reg.velorio_online = i.velorio_online;
-                        }
-
-                        if (ehVelorio) {
-                            reg.tipo_servico = 'VELÓRIO';
-                            const salaAtualEhNumerica = /sala\s*\d+|\b\d+\b/i.test(String(reg.sala || '')) && !String(reg.sala || '').toUpperCase().includes('IMERSIVA');
-                            const novaSalaEhNumerica = /sala\s*\d+|\b\d+\b/i.test(String(i.sala_recurso || '')) && !String(i.sala_recurso || '').toUpperCase().includes('IMERSIVA');
-
-                            if (i.sala_recurso && i.sala_recurso !== 'Direto') {
-                                if (!salaAtualEhNumerica || novaSalaEhNumerica || reg.sala === 'Direto') {
-                                    reg.sala = i.sala_recurso;
-                                    reg.sala_normalizada = normalizarSala(i.sala_recurso);
-                                }
-                            }
-                            if (i.data_inicio && (!reg.data_inicio || reg.origem_dados === 'INTUO')) {
-                                reg.data_inicio = i.data_inicio;
-                            }
-                            if (i.data_fim && (!reg.data_fim || reg.origem_dados === 'INTUO')) {
-                                reg.data_fim = i.data_fim;
-                            }
-                        }
-
-                        if (ehCremacao) {
-                            reg.destino = 'Cremação';
-                        } else if (ehSepultamento) {
-                            const destIntuo = formatarLocalCemiterio(i.destino, 'SEPULTAMENTO');
-                            if (destIntuo && destIntuo !== 'Consulte a ACM') {
-                                reg.destino = destIntuo;
-                            }
-                        }
-                    } else {
-                        if (ehBuffetOuApoio) return; // Não gera entrada solta para serviços de alimentação
-
-                        const ehDireto = !i.sala_recurso || i.sala_recurso === 'Direto' || !ehVelorio;
-                        let tipoServicoFinal = ehVelorio ? 'VELÓRIO' : (ehCremacao ? 'CREMAÇÃO' : (ehDireto ? 'SEPULTAMENTO DIRETO' : i.tipo_servico));
-                        let destFinal = ehCremacao ? 'Cremação' : formatarLocalCemiterio(i.destino, tipoServicoFinal);
+                        const destinoMemorial = formatarLocalCemiterio(m.local_sepultura);
+                        const salaMemorial = (m.sala_cerimonia && m.sala_cerimonia !== 'N/D' && m.sala_cerimonia !== '-' && m.sala_cerimonia !== 'null') ? m.sala_cerimonia : 'Direto';
 
                         mapaPorPessoa.set(chave, {
                             chave_cruzamento: chave,
-                            id_intuo: i.id_intuo,
-                            id_memorial: null,
-                            nome_falecido: i.nome_falecido,
-                            sala: ehDireto ? 'Direto' : i.sala_recurso,
-                            sala_normalizada: ehDireto ? 'direto' : normalizarSala(i.sala_recurso),
-                            foto_url: null,
-                            qr_code_memorial: null,
-                            link_memorial: null,
-                            velorio_online: i.velorio_online || null,
-                            destino: destFinal,
-                            tipo_servico: tipoServicoFinal,
-                            data_inicio: i.data_inicio,
-                            data_fim: i.data_fim,
-                            data_nascimento: '--.--.----',
-                            data_falecimento: '--.--.----',
-                            status_evento: i.status || 'Ativo',
-                            origem_dados: 'INTUO'
+                            id_intuo: null,
+                            id_memorial: m.id_memorial,
+                            nome_falecido: m.nome_falecido,
+                            sala: salaMemorial,
+                            sala_normalizada: normalizarSala(salaMemorial),
+                            foto_url: m.foto_url,
+                            qr_code_memorial: m.qr_code_memorial,
+                            link_memorial: m.link_memorial,
+                            velorio_online: null,
+                            destino: destinoMemorial,
+                            tipo_servico: 'VELÓRIO',
+                            data_inicio: m.data_inicio,
+                            data_fim: m.data_fim,
+                            data_nascimento: m.data_nascimento || '--.--.----',
+                            data_falecimento: m.data_falecimento || '--.--.----',
+                            status_evento: 'Ativo',
+                            origem_dados: 'MEMORIAL',
+                            editado_manualmente: 0,
+                            visivel: 1
                         });
-                    }
-                });
-
-                const listaFinal = Array.from(mapaPorPessoa.values()).filter(item => {
-                    const tipo = String(item.tipo_servico || '').toUpperCase();
-                    const dest = String(item.destino || '').toUpperCase();
-                    const salaNorm = String(item.sala_normalizada || '').toLowerCase();
-                    const sala = String(item.sala || '').trim().toLowerCase();
-                    const ehSemSala = !sala || sala === 'direto' || salaNorm === 'direto' || sala === 'n/d' || sala === '-' || sala === 'null';
-
-                    // Regra: toda cremação que for direta e não associada a velório não aparece
-                    const ehCremacao = tipo.includes('CREMA') || dest.includes('CREMA');
-                    const ehVelorio = tipo.includes('VELÓRIO') || (!ehSemSala && item.id_memorial);
-
-                    if (ehCremacao && ehSemSala && !ehVelorio) {
-                        return false;
-                    }
-
-                    return true;
-                });
-
-                // DIAGNÓSTICO
-                diagnosticarCruzamento(
-                    dataRef,
-                    memoriaisDoDia,
-                    intuosDoDia,
-                    mapaPorPessoa,
-                    listaFinal
-                );
-
-                db.serialize(() => {
-                    db.run('DELETE FROM painel_consolidado');
-
-                    const stmt = db.prepare(`
-                        INSERT INTO painel_consolidado (
-                            chave_cruzamento, id_intuo, id_memorial, nome_falecido,
-                            sala, sala_normalizada, foto_url, qr_code_memorial, link_memorial, velorio_online, destino, tipo_servico,
-                            data_inicio, data_fim, data_nascimento, data_falecimento,
-                            status_evento, origem_dados, atualizado_em
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                    `);
-
-                    listaFinal.forEach(item => {
-                        stmt.run(
-                            item.chave_cruzamento,
-                            item.id_intuo,
-                            item.id_memorial,
-                            item.nome_falecido,
-                            item.sala,
-                            item.sala_normalizada,
-                            item.foto_url,
-                            item.qr_code_memorial,
-                            item.link_memorial,
-                            item.velorio_online,
-                            item.destino,
-                            item.tipo_servico,
-                            item.data_inicio,
-                            item.data_fim,
-                            item.data_nascimento,
-                            item.data_falecimento,
-                            item.status_evento,
-                            item.origem_dados
-                        );
                     });
 
-                    stmt.finalize((errFinal) => {
-                        if (errFinal) return reject(errFinal);
-                        console.log('✨ [SQLITE] Cruzamento finalizado: ' + listaFinal.length + ' registros consolidados.');
-                        resolve(listaFinal);
+                    // 2. Ordena Intuo: Velórios com salas numéricas primeiro, depois velórios gerais, depois Sepultamento/Cremação, depois buffet/apoio
+                    const intuosOrdenados = [...intuosDoDia].sort((a, b) => {
+                        const peso = (item) => {
+                            let raw = {};
+                            try { raw = JSON.parse(item.raw_json || '{}'); } catch(e) {}
+                            const grupo = (raw.ch_nome_grupo_serviço || '').toUpperCase();
+                            const tipo = (item.tipo_servico || '').toUpperCase();
+                            const recurso = String(item.sala_recurso || '').toUpperCase();
+                            const ehSalaNumerica = /sala\s*\d+|\b\d+\b/i.test(recurso) && !recurso.includes('IMERSIVA');
+                            
+                            if (ehSalaNumerica) return 1;
+                            if (grupo.includes('VELÓRIO') || (item.sala_recurso && item.sala_recurso !== 'Direto')) return 2;
+                            if (grupo.includes('SEPULTAMENTO') || tipo.includes('SEPULTAMENTO') || tipo.includes('CREMA')) return 3;
+                            return 4;
+                        };
+                        return peso(a) - peso(b);
+                    });
+
+                    // 3. Cruza com os eventos da Intuo do dia
+                    intuosOrdenados.forEach(i => {
+                        const nomeLimpo = normalizarTexto(i.nome_falecido);
+                        const chave = nomeLimpo;
+
+                        let raw = {};
+                        try { raw = JSON.parse(i.raw_json || '{}'); } catch(e) {}
+                        const grupoServico = (raw.ch_nome_grupo_serviço || '').toUpperCase();
+                        const nomeServico = (raw.ch_nome_serviço || '').toUpperCase();
+                        const ehBuffetOuApoio = grupoServico.includes('BUFFET') || nomeServico.includes('KIT LANCHE') || nomeServico.includes('CAFETERIA');
+
+                        const ehVelorio = (grupoServico.includes('VELÓRIO') || nomeServico.includes('SALA DE CERIMÔNIA') || (i.sala_recurso && i.sala_recurso !== 'Direto')) && !ehBuffetOuApoio;
+                        const ehCremacao = (i.tipo_servico && i.tipo_servico.includes('CREMA')) || nomeServico.includes('CREMAÇÃO');
+                        const ehSepultamento = (grupoServico.includes('SEPULTAMENTO') || (i.tipo_servico && (i.tipo_servico.includes('SEPULTAMENTO') || i.tipo_servico.includes('INUMAÇÃO'))));
+
+                        if (mapaPorPessoa.has(chave)) {
+                            const reg = mapaPorPessoa.get(chave);
+                            reg.id_intuo = i.id_intuo || reg.id_intuo;
+                            reg.origem_dados = reg.id_memorial ? 'CRUZADO (MEMORIAL + INTUO)' : 'INTUO';
+
+                            if (i.velorio_online) {
+                                reg.velorio_online = i.velorio_online;
+                            }
+
+                            if (ehVelorio) {
+                                reg.tipo_servico = 'VELÓRIO';
+                                const salaAtualEhNumerica = /sala\s*\d+|\b\d+\b/i.test(String(reg.sala || '')) && !String(reg.sala || '').toUpperCase().includes('IMERSIVA');
+                                const novaSalaEhNumerica = /sala\s*\d+|\b\d+\b/i.test(String(i.sala_recurso || '')) && !String(i.sala_recurso || '').toUpperCase().includes('IMERSIVA');
+
+                                if (i.sala_recurso && i.sala_recurso !== 'Direto') {
+                                    if (!salaAtualEhNumerica || novaSalaEhNumerica || reg.sala === 'Direto') {
+                                        reg.sala = i.sala_recurso;
+                                        reg.sala_normalizada = normalizarSala(i.sala_recurso);
+                                    }
+                                }
+                                if (i.data_inicio && (!reg.data_inicio || reg.origem_dados === 'INTUO')) {
+                                    reg.data_inicio = i.data_inicio;
+                                }
+                                if (i.data_fim && (!reg.data_fim || reg.origem_dados === 'INTUO')) {
+                                    reg.data_fim = i.data_fim;
+                                }
+                            }
+
+                            if (ehCremacao) {
+                                reg.destino = 'Cremação';
+                            } else if (ehSepultamento) {
+                                const destIntuo = formatarLocalCemiterio(i.destino, 'SEPULTAMENTO');
+                                if (destIntuo && destIntuo !== 'Consulte a ACM') {
+                                    reg.destino = destIntuo;
+                                }
+                            }
+                        } else {
+                            if (ehBuffetOuApoio) return; // Não gera entrada solta para serviços de alimentação
+
+                            const ehDireto = !i.sala_recurso || i.sala_recurso === 'Direto' || !ehVelorio;
+                            let tipoServicoFinal = ehVelorio ? 'VELÓRIO' : (ehCremacao ? 'CREMAÇÃO' : (ehDireto ? 'SEPULTAMENTO DIRETO' : i.tipo_servico));
+                            let destFinal = ehCremacao ? 'Cremação' : formatarLocalCemiterio(i.destino, tipoServicoFinal);
+
+                            mapaPorPessoa.set(chave, {
+                                chave_cruzamento: chave,
+                                id_intuo: i.id_intuo,
+                                id_memorial: null,
+                                nome_falecido: i.nome_falecido,
+                                sala: ehDireto ? 'Direto' : i.sala_recurso,
+                                sala_normalizada: ehDireto ? 'direto' : normalizarSala(i.sala_recurso),
+                                foto_url: null,
+                                qr_code_memorial: null,
+                                link_memorial: null,
+                                velorio_online: i.velorio_online || null,
+                                destino: destFinal,
+                                tipo_servico: tipoServicoFinal,
+                                data_inicio: i.data_inicio,
+                                data_fim: i.data_fim,
+                                data_nascimento: '--.--.----',
+                                data_falecimento: '--.--.----',
+                                status_evento: i.status || 'Ativo',
+                                origem_dados: 'INTUO',
+                                editado_manualmente: 0,
+                                visivel: 1
+                            });
+                        }
+                    });
+
+                    // 4. Aplica Overrides e Edições Manuais (Persistência Segura)
+                    const mapaEdicoes = new Map();
+                    (edicoes || []).forEach(ed => {
+                        if (ed.chave_cruzamento) mapaEdicoes.set(ed.chave_cruzamento, ed);
+                        if (ed.id_intuo) mapaEdicoes.set(`intuo_${ed.id_intuo}`, ed);
+                        if (ed.id_memorial) mapaEdicoes.set(`mem_${ed.id_memorial}`, ed);
+                    });
+
+                    mapaPorPessoa.forEach((reg, chave) => {
+                        const ed = mapaEdicoes.get(chave) || (reg.id_intuo && mapaEdicoes.get(`intuo_${reg.id_intuo}`)) || (reg.id_memorial && mapaEdicoes.get(`mem_${reg.id_memorial}`));
+                        if (ed) {
+                            if (ed.nome_falecido) reg.nome_falecido = ed.nome_falecido;
+                            if (ed.sala) {
+                                reg.sala = ed.sala;
+                                reg.sala_normalizada = normalizarSala(ed.sala);
+                            }
+                            if (ed.destino) reg.destino = formatarLocalCemiterio(ed.destino, reg.tipo_servico);
+                            if (ed.tipo_servico) reg.tipo_servico = ed.tipo_servico;
+                            if (ed.data_inicio) reg.data_inicio = ed.data_inicio;
+                            if (ed.data_fim) reg.data_fim = ed.data_fim;
+                            if (ed.velorio_online !== undefined && ed.velorio_online !== null) reg.velorio_online = ed.velorio_online;
+                            if (ed.foto_url) reg.foto_url = ed.foto_url;
+                            if (ed.link_memorial) reg.link_memorial = ed.link_memorial;
+                            if (ed.visivel !== undefined) reg.visivel = ed.visivel;
+                            reg.editado_manualmente = 1;
+                            reg.origem_dados = reg.origem_dados.includes('EDITADO') ? reg.origem_dados : `${reg.origem_dados} (EDITADO)`;
+                        }
+                    });
+
+                    // Inclui edições manuais que foram criadas para essa data específica (sem correspondente Intuo/Bubble)
+                    (edicoes || []).forEach(ed => {
+                        if (!mapaPorPessoa.has(ed.chave_cruzamento)) {
+                            const dtIni = extrairDataBrasil(ed.data_inicio);
+                            const dtFim = extrairDataBrasil(ed.data_fim);
+                            if (dtIni === dataRef || dtFim === dataRef) {
+                                mapaPorPessoa.set(ed.chave_cruzamento, {
+                                    chave_cruzamento: ed.chave_cruzamento,
+                                    id_intuo: ed.id_intuo || null,
+                                    id_memorial: ed.id_memorial || null,
+                                    nome_falecido: ed.nome_falecido,
+                                    sala: ed.sala || 'Direto',
+                                    sala_normalizada: normalizarSala(ed.sala || 'Direto'),
+                                    foto_url: ed.foto_url || null,
+                                    qr_code_memorial: null,
+                                    link_memorial: ed.link_memorial || null,
+                                    velorio_online: ed.velorio_online || null,
+                                    destino: formatarLocalCemiterio(ed.destino, ed.tipo_servico),
+                                    tipo_servico: ed.tipo_servico || 'VELÓRIO',
+                                    data_inicio: ed.data_inicio,
+                                    data_fim: ed.data_fim,
+                                    data_nascimento: '--.--.----',
+                                    data_falecimento: '--.--.----',
+                                    status_evento: 'Ativo',
+                                    origem_dados: 'MANUAL (EDITADO)',
+                                    editado_manualmente: 1,
+                                    visivel: ed.visivel !== undefined ? ed.visivel : 1
+                                });
+                            }
+                        }
+                    });
+
+                    const listaFinal = Array.from(mapaPorPessoa.values()).filter(item => {
+                        if (item.visivel === 0) return false;
+
+                        const tipo = String(item.tipo_servico || '').toUpperCase();
+                        const dest = String(item.destino || '').toUpperCase();
+                        const salaNorm = String(item.sala_normalizada || '').toLowerCase();
+                        const sala = String(item.sala || '').trim().toLowerCase();
+                        const ehSemSala = !sala || sala === 'direto' || salaNorm === 'direto' || sala === 'n/d' || sala === '-' || sala === 'null';
+
+                        // Regra: toda cremação que for direta e não associada a velório não aparece
+                        const ehCremacao = tipo.includes('CREMA') || dest.includes('CREMA');
+                        const ehVelorio = tipo.includes('VELÓRIO') || (!ehSemSala && item.id_memorial);
+
+                        if (ehCremacao && ehSemSala && !ehVelorio) {
+                            return false;
+                        }
+
+                        return true;
+                    });
+
+                    // DIAGNÓSTICO
+                    diagnosticarCruzamento(
+                        dataRef,
+                        memoriaisDoDia,
+                        intuosDoDia,
+                        mapaPorPessoa,
+                        listaFinal
+                    );
+
+                    db.serialize(() => {
+                        db.run('DELETE FROM painel_consolidado');
+
+                        const stmt = db.prepare(`
+                            INSERT INTO painel_consolidado (
+                                chave_cruzamento, id_intuo, id_memorial, nome_falecido,
+                                sala, sala_normalizada, foto_url, qr_code_memorial, link_memorial, velorio_online, destino, tipo_servico,
+                                data_inicio, data_fim, data_nascimento, data_falecimento,
+                                status_evento, origem_dados, editado_manualmente, visivel, atualizado_em
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                        `);
+
+                        listaFinal.forEach(item => {
+                            stmt.run(
+                                item.chave_cruzamento,
+                                item.id_intuo,
+                                item.id_memorial,
+                                item.nome_falecido,
+                                item.sala,
+                                item.sala_normalizada,
+                                item.foto_url,
+                                item.qr_code_memorial,
+                                item.link_memorial,
+                                item.velorio_online,
+                                item.destino,
+                                item.tipo_servico,
+                                item.data_inicio,
+                                item.data_fim,
+                                item.data_nascimento,
+                                item.data_falecimento,
+                                item.status_evento,
+                                item.origem_dados,
+                                item.editado_manualmente ? 1 : 0,
+                                item.visivel !== undefined ? item.visivel : 1
+                            );
+                        });
+
+                        stmt.finalize((errFinal) => {
+                            if (errFinal) return reject(errFinal);
+                            console.log('✨ [SQLITE] Cruzamento finalizado: ' + listaFinal.length + ' registros consolidados.');
+                            resolve(listaFinal);
+                        });
                     });
                 });
             });
@@ -1115,10 +1215,103 @@ function executarCruzamentoSQLite(dataReferencia) {
     });
 }
 
-function obterEventosHall() {
+function salvarEdicaoEvento(dados) {
+    return new Promise((resolve, reject) => {
+        if (!dados || (!dados.chave_cruzamento && !dados.nome_falecido)) {
+            return reject(new Error('chave_cruzamento ou nome_falecido é obrigatório'));
+        }
+
+        const chave = dados.chave_cruzamento || normalizarTexto(dados.nome_falecido);
+        const salaNorm = dados.sala ? normalizarSala(dados.sala) : 'direto';
+
+        const sql = `
+            INSERT INTO eventos_edicoes (
+                chave_cruzamento, id_intuo, id_memorial, nome_falecido,
+                sala, sala_normalizada, destino, tipo_servico,
+                data_inicio, data_fim, velorio_online, foto_url,
+                link_memorial, visivel, atualizado_em
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(chave_cruzamento) DO UPDATE SET
+                nome_falecido = coalesce(excluded.nome_falecido, eventos_edicoes.nome_falecido),
+                sala = coalesce(excluded.sala, eventos_edicoes.sala),
+                sala_normalizada = coalesce(excluded.sala_normalizada, eventos_edicoes.sala_normalizada),
+                destino = coalesce(excluded.destino, eventos_edicoes.destino),
+                tipo_servico = coalesce(excluded.tipo_servico, eventos_edicoes.tipo_servico),
+                data_inicio = coalesce(excluded.data_inicio, eventos_edicoes.data_inicio),
+                data_fim = coalesce(excluded.data_fim, eventos_edicoes.data_fim),
+                velorio_online = coalesce(excluded.velorio_online, eventos_edicoes.velorio_online),
+                foto_url = coalesce(excluded.foto_url, eventos_edicoes.foto_url),
+                link_memorial = coalesce(excluded.link_memorial, eventos_edicoes.link_memorial),
+                visivel = coalesce(excluded.visivel, eventos_edicoes.visivel),
+                atualizado_em = CURRENT_TIMESTAMP
+        `;
+
+        db.run(sql, [
+            chave,
+            dados.id_intuo || null,
+            dados.id_memorial || null,
+            dados.nome_falecido ? dados.nome_falecido.trim() : null,
+            dados.sala || null,
+            salaNorm,
+            dados.destino || null,
+            dados.tipo_servico || null,
+            dados.data_inicio || null,
+            dados.data_fim || null,
+            dados.velorio_online !== undefined ? dados.velorio_online : null,
+            dados.foto_url || null,
+            dados.link_memorial || null,
+            dados.visivel !== undefined ? (dados.visivel ? 1 : 0) : 1
+        ], function(err) {
+            if (err) return reject(err);
+            resolve({ sucesso: true, id_edicao: this.lastID, chave_cruzamento: chave });
+        });
+    });
+}
+
+function removerEdicaoEvento(chaveCruzamento) {
+    return new Promise((resolve, reject) => {
+        if (!chaveCruzamento) return resolve({ sucesso: false, mensagem: "Chave não informada" });
+        const chave = normalizarTexto(chaveCruzamento);
+        db.run("DELETE FROM eventos_edicoes WHERE chave_cruzamento = ? OR chave_cruzamento = ?", [chaveCruzamento, chave], function(err) {
+            if (err) return reject(err);
+            resolve({ sucesso: true, removido: this.changes > 0 });
+        });
+    });
+}
+
+async function obterEventosHall(dataReferencia) {
+    const dataRef = dataReferencia || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    const hoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+
+    // Se for solicitado um dia específico diferente de hoje, roda o cruzamento para aquela data sob demanda
+    if (dataRef !== hoje) {
+        const eventosData = await executarCruzamentoSQLite(dataRef);
+        return eventosData.map(e => ({
+            chave_cruzamento: e.chave_cruzamento,
+            nome: e.nome_falecido,
+            sala: e.sala,
+            foto: e.foto_url,
+            id_memorial: e.id_memorial,
+            id_intuo: e.id_intuo,
+            qr_code_memorial: e.qr_code_memorial,
+            link_memorial: e.link_memorial,
+            velorio_online: e.velorio_online,
+            destino: e.destino,
+            tipo_servico: e.tipo_servico,
+            data_inicio: e.data_inicio,
+            data_fim: e.data_fim,
+            data_nascimento: e.data_nascimento,
+            data_falecimento: e.data_falecimento,
+            origem_dados: e.origem_dados,
+            editado_manualmente: e.editado_manualmente || 0
+        }));
+    }
+
     return new Promise((resolve, reject) => {
         db.all(`
             SELECT 
+                chave_cruzamento,
+                id_intuo,
                 nome_falecido AS nome,
                 sala,
                 foto_url AS foto,
@@ -1132,7 +1325,8 @@ function obterEventosHall() {
                 data_fim,
                 data_nascimento,
                 data_falecimento,
-                origem_dados
+                origem_dados,
+                editado_manualmente
             FROM painel_consolidado
             ORDER BY data_inicio ASC
         `, [], (err, rows) => {
@@ -1147,6 +1341,7 @@ function obterEventoPorSala(numeroSala, horaReferencia = new Date()) {
         const salaLimpa = normalizarSala(numeroSala);
         db.all(`
             SELECT 
+                chave_cruzamento,
                 nome_falecido AS nome,
                 sala,
                 foto_url AS foto,
@@ -1160,7 +1355,8 @@ function obterEventoPorSala(numeroSala, horaReferencia = new Date()) {
                 data_fim,
                 data_nascimento,
                 data_falecimento,
-                origem_dados
+                origem_dados,
+                editado_manualmente
             FROM painel_consolidado
             WHERE sala_normalizada = ? OR sala = ?
             ORDER BY data_inicio ASC
@@ -1213,6 +1409,8 @@ module.exports = {
     inicializarBanco,
     salvarEventosIntuo,
     salvarEventosMemorial,
+    salvarEdicaoEvento,
+    removerEdicaoEvento,
     executarCruzamentoSQLite,
     obterEventosHall,
     obterEventoPorSala
