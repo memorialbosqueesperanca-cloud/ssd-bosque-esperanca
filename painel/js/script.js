@@ -25,13 +25,13 @@ function calcularStatus(data_inicio, data_fim) {
     const vinteMinDepois = new Date(fim.getTime() + 20 * 60 * 1000);
 
     if (agora < inicio) {
-        return { texto: 'Previsto', cor: '#3B82F6' }; // Azul
+        return { texto: 'Previsto', cor: '#3A6B88' }; // Azul ardósia sereno (Comfort)
     } else if (agora < trintaMinAntes) {
-        return { texto: 'Em andamento', cor: '#01813D' }; // Verde original
+        return { texto: 'Em andamento', cor: '#2C5740' }; // Verde musgo / institucional
     } else if (agora >= trintaMinAntes && agora <= vinteMinDepois) {
-        return { texto: 'Encerrando', cor: '#FAA507' }; // Laranja
+        return { texto: 'Encerrando', cor: '#C07A2B' }; // Âmbar caramelo nobre (Comfort)
     } else {
-        return { texto: 'Encerrado', cor: '#cf0303' }; // Vermelho
+        return { texto: 'Encerrado', cor: '#9E3D3D' }; // Terracota suave / acolhedor (Comfort)
     }
 }
 
@@ -209,17 +209,15 @@ function renderizar(lista) {
             }
         }
 
-        const estiloTextoLongo = `white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2;`;
-
         linha.innerHTML = `
             ${svgSeta}
             <div class="info-row__foto-wrapper">
                 <img class="info-row__foto" src="${foto}" onerror="this.src='videos/logo_bosque.png'">
             </div>
-            <div class="info-nome text-default" style="${estiloTextoLongo}">${item.nome || 'Homenageado'}</div>
-            <div class="info-sala text-default" style="${estiloTextoLongo}">${sala}</div>
+            <div class="info-nome text-default">${item.nome || 'Homenageado'}</div>
+            <div class="info-sala text-default">${sala}</div>
             <div class="info-horario text-default">${formatarHorario(item.data_inicio, item.data_fim)}</div>
-            <div class="info-destino text-default" style="${estiloTextoLongo}">${destinoTexto}</div>
+            <div class="info-destino text-default">${destinoTexto}</div>
             <div class="info-status text-highlight" style="color:${status.cor};">${status.texto}</div>
         `;
         corpo.appendChild(linha);

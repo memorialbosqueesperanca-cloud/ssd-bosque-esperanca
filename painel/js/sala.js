@@ -649,13 +649,13 @@ function calcularStatus(data_inicio, data_fim) {
     const vinteMinDepois = new Date(fim.getTime() + 20 * 60 * 1000);
 
     if (agora < inicio) {
-        return { texto: 'Previsto', cor: '#3B82F6' }; // Azul
+        return { texto: 'Previsto', cor: '#3A6B88' }; // Azul ardósia sereno (Comfort)
     } else if (agora < trintaMinAntes) {
-        return { texto: 'Em andamento', cor: '#01813D' }; // Verde
+        return { texto: 'Em andamento', cor: '#2C5740' }; // Verde musgo / institucional
     } else if (agora >= trintaMinAntes && agora <= vinteMinDepois) {
-        return { texto: 'Encerrando', cor: '#FAA507' }; // Laranja
+        return { texto: 'Encerrando', cor: '#C07A2B' }; // Âmbar caramelo nobre (Comfort)
     } else {
-        return { texto: 'Encerrado', cor: '#cf0303' }; // Vermelho
+        return { texto: 'Encerrado', cor: '#9E3D3D' }; // Terracota suave / acolhedor (Comfort)
     }
 }
 

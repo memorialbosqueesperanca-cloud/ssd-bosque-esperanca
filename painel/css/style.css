@@ -32,29 +32,31 @@
 
     --fonte-principal: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
 
-    /* Tamanhos responsivos otimizados para LED 640x480 e limitados para telas widescreen */
-    --foto-size: clamp(60px, 8vw, 80px);
-    --icon-size: clamp(24px, 3vw, 32px);
-    --header-padding: clamp(20px, 3vw, 30px);
-    --row-padding-v: clamp(16px, 2vw, 24px);
-    --row-gap: clamp(16px, 2vw, 24px);
-    --font-body: clamp(16px, 2vw, 20px);
-    --font-header: clamp(24px, 3vw, 28px);
+    /* Tamanhos responsivos otimizados para LED 640x480 e telas widescreen */
+    --foto-size: clamp(54px, 6vw, 76px);
+    --icon-size: clamp(22px, 2.5vw, 30px);
+    --header-padding: clamp(16px, 2vw, 24px);
+    --row-padding-h: clamp(16px, 3vw, 44px);
+    --row-padding-v: clamp(12px, 1.6vh, 20px);
+    --row-gap: clamp(12px, 1.6vw, 22px);
+    --font-body: clamp(15px, 1.8vw, 19px);
+    --font-header: clamp(22px, 2.6vw, 28px);
 
     --sombra-card: 0 8px 24px rgba(44, 87, 64, 0.08);
     --sombra-elevada: 0 12px 32px rgba(44, 87, 64, 0.12);
 }
 
-/* Ajustes para telas de notebook (768px+) - reduz escala para manter visual do painel */
+/* Ajustes para telas de notebook (768px+) */
 @media (min-width: 768px) {
     :root {
-        --foto-size: clamp(60px, 5vw, 75px);
-        --icon-size: clamp(24px, 2.5vw, 28px);
-        --header-padding: clamp(20px, 2.5vw, 28px);
-        --row-padding-v: clamp(14px, 1.5vw, 20px);
-        --row-gap: clamp(14px, 1.5vw, 20px);
-        --font-body: clamp(16px, 1.8vw, 19px);
-        --font-header: clamp(24px, 2.5vw, 26px);
+        --foto-size: clamp(56px, 4.5vw, 72px);
+        --icon-size: clamp(22px, 2vw, 26px);
+        --header-padding: clamp(16px, 2vw, 24px);
+        --row-padding-h: clamp(20px, 3.2vw, 48px);
+        --row-padding-v: clamp(12px, 1.4vh, 18px);
+        --row-gap: clamp(12px, 1.4vw, 20px);
+        --font-body: clamp(15px, 1.6vw, 18px);
+        --font-header: clamp(22px, 2.2vw, 26px);
     }
 }
 
@@ -114,9 +116,9 @@ body::before {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--header-padding) 8%;
+    padding: var(--header-padding) var(--row-padding-h);
     box-sizing: border-box;
-    min-height: clamp(80px, 10vw, 160px);
+    min-height: clamp(75px, 9vw, 140px);
     position: relative;
     border-bottom: 2.5px solid rgba(198, 155, 86, 0.45);
     box-shadow: 0 6px 20px rgba(27, 56, 41, 0.25);
@@ -152,7 +154,7 @@ body::before {
     font-weight: 800;
     white-space: nowrap;
     flex-shrink: 0;
-    width: 17%;
+    width: minmax(130px, 1.2fr);
     text-align: left;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
@@ -162,7 +164,7 @@ body::before {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: clamp(10px, 1.2vw, 16px) 8%;
+    padding: clamp(8px, 1vh, 14px) var(--row-padding-h);
     background: var(--cor-terrosa-light);
     color: var(--cor-texto-principal);
     border-bottom: 1px solid var(--cor-terrosa-borda);
@@ -454,10 +456,10 @@ body::before {
 
 .colunas-header {
     display: grid;
-    grid-template-columns: var(--icon-size) var(--foto-size) 2.5fr 0.8fr 1.3fr 1.4fr 17%;
+    grid-template-columns: var(--icon-size) var(--foto-size) 3fr 1.2fr 1.4fr 1.6fr minmax(130px, 1.2fr);
     align-items: center;
     gap: var(--row-gap);
-    padding: clamp(8px, 1vw, 16px) 8%;
+    padding: clamp(8px, 1.2vh, 16px) var(--row-padding-h);
     box-sizing: border-box;
     background: rgba(244, 237, 229, 0.92);
     backdrop-filter: blur(8px);
@@ -488,13 +490,12 @@ body::before {
 
 .info-row {
     flex: 1;
-    min-height: 0;
-    max-height: 14vh;
+    min-height: clamp(64px, 10vh, 110px);
     display: grid;
-    grid-template-columns: var(--icon-size) var(--foto-size) 2.5fr 0.8fr 1.3fr 1.4fr 17%;
+    grid-template-columns: var(--icon-size) var(--foto-size) 3fr 1.2fr 1.4fr 1.6fr minmax(130px, 1.2fr);
     align-items: center;
     gap: var(--row-gap);
-    padding: 0 8%;
+    padding: clamp(10px, 1.4vh, 20px) var(--row-padding-h);
     box-sizing: border-box;
     border-bottom: 1px solid var(--cor-borda-suave);
     transition: background-color 0.3s ease;
@@ -711,8 +712,9 @@ body::before {
 
 @media (max-width: 1100px) {
     .colunas-header {
-        grid-template-columns: var(--foto-size) 2fr auto auto auto 17%;
-        gap: clamp(8px, 1.5vw, 20px);
+        grid-template-columns: var(--foto-size) 2.5fr 1.2fr 1.4fr 1.6fr minmax(110px, 1.2fr);
+        gap: clamp(8px, 1.5vw, 16px);
+        padding: clamp(8px, 1vh, 14px) clamp(12px, 2.5vw, 24px);
     }
 
     .colunas-header span:first-child {
@@ -720,8 +722,9 @@ body::before {
     }
 
     .info-row {
-        grid-template-columns: var(--foto-size) 2fr auto auto auto 17%;
-        gap: clamp(8px, 1.5vw, 20px);
+        grid-template-columns: var(--foto-size) 2.5fr 1.2fr 1.4fr 1.6fr minmax(110px, 1.2fr);
+        gap: clamp(8px, 1.5vw, 16px);
+        padding: clamp(8px, 1.2vh, 16px) clamp(12px, 2.5vw, 24px);
     }
 
     .info-row__icon {

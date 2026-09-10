@@ -186,9 +186,10 @@
             padding: 2px 6px;
             border-radius: 4px;
         }
-        .status-previsto { background: #EBF8FF; color: #2B6CB0; }
-        .status-andamento { background: #C6F6D5; color: #22543D; }
-        .status-encerrado { background: #EDF2F7; color: #718096; }
+        .status-previsto { background: #EAF2F7; color: #3A6B88; border: 1px solid rgba(58, 107, 136, 0.2); }
+        .status-andamento { background: #EAF2EC; color: #2C5740; border: 1px solid rgba(44, 87, 64, 0.2); }
+        .status-encerrando { background: #FDF3E7; color: #C07A2B; border: 1px solid rgba(192, 122, 43, 0.2); }
+        .status-encerrado { background: #F8EAEA; color: #9E3D3D; border: 1px solid rgba(158, 61, 61, 0.2); }
 
         .footer-print {
             margin-top: 32px;
@@ -380,7 +381,7 @@
                 return { texto: 'Encerrado', class: 'status-encerrado' };
             }
             if (fim && (fim - agora) <= 30 * 60 * 1000 && agora <= fim) {
-                return { texto: 'Encerrando', class: 'status-andamento' };
+                return { texto: 'Encerrando', class: 'status-encerrando' };
             }
             if (ini && agora >= ini) {
                 return { texto: 'Em andamento', class: 'status-andamento' };
