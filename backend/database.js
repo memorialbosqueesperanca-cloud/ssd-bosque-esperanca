@@ -185,6 +185,98 @@ function normalizarSala(sala) {
     return s.replace(/\D/g, '') || s.trim();
 }
 
+function calcularSimilaridade(str1, str2) {
+    if (!str1 || !str2) return 0;
+    if (str1 === str2) return 1;
+
+    const s1 = String(str1).toLowerCase().trim();
+    const s2 = String(str2).toLowerCase().trim();
+    if (s1 === s2) return 1;
+
+    // Se uma string contém a outra e o tamanho é muito próximo
+    if (s1.includes(s2) || s2.includes(s1)) {
+        const proporcao = Math.min(s1.length, s2.length) / Math.max(s1.length, s2.length);
+        if (proporcao >= 0.75) return proporcao;
+    }
+
+    const len1 = s1.length;
+    const len2 = s2.length;
+    const matrix = [];
+
+    for (let i = 0; i <= len1; i++) {
+        matrix[i] = [i];
+    }
+    for (let j = 0; j <= len2; j++) {
+        matrix[0][j] = j;
+    }
+
+    for (let i = 1; i <= len1; i++) {
+        for (let j = 1; j <= len2; j++) {
+            const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+            matrix[i][j] = Math.min(
+                matrix[i - 1][j] + 1,      // deleção
+                matrix[i][j - 1] + 1,      // inserção
+                matrix[i - 1][j - 1] + cost // substituição
+            );
+        }
+    }
+
+    const distancia = matrix[len1][len2];
+    const maxLen = Math.max(len1, len2);
+    return maxLen === 0 ? 1 : 1 - (distancia / maxLen);
+}
+
+function buscarChaveNoMapa(chaveBusca, salaBusca, mapaPorPessoa) {
+    if (!chaveBusca) return null;
+    if (mapaPorPessoa.has(chaveBusca)) return chaveBusca;
+
+    const salaBuscaNorm = normalizarSala(salaBusca);
+    const tokensBusca = chaveBusca.split(' ').filter(t => t.length > 2);
+    const primeiroNome = tokensBusca[0] || '';
+    const ultimoNome = tokensBusca[tokensBusca.length - 1] || '';
+
+    let melhorChave = null;
+    let maiorSimilaridade = 0;
+
+    for (const [chaveExistente, regExistente] of mapaPorPessoa.entries()) {
+        const sim = calcularSimilaridade(chaveBusca, chaveExistente);
+        const salaExistenteNorm = normalizarSala(regExistente.sala);
+        const mesmaSala = Boolean(salaBuscaNorm && salaExistenteNorm && salaBuscaNorm !== 'direto' && salaBuscaNorm === salaExistenteNorm);
+
+        const tokensExistente = chaveExistente.split(' ').filter(t => t.length > 2);
+        const primeiroNomeEx = tokensExistente[0] || '';
+        const ultimoNomeEx = tokensExistente[tokensExistente.length - 1] || '';
+        const mesmoPrimeiroEUltimo = (primeiroNome && primeiroNome === primeiroNomeEx) && (ultimoNome && ultimoNome === ultimoNomeEx);
+
+        // Caso 1: Mesma sala e primeiro + último nome iguais (ex: Luiz ... Silveira na Sala 7) -> Match certo
+        if (mesmaSala && mesmoPrimeiroEUltimo) {
+            return chaveExistente;
+        }
+
+        // Caso 2: Mesma sala e similaridade >= 0.70
+        if (mesmaSala && sim >= 0.70) {
+            if (sim > maiorSimilaridade) {
+                maiorSimilaridade = sim;
+                melhorChave = chaveExistente;
+            }
+        }
+
+        // Caso 3: Similaridade alta >= 0.85 mesmo que sem sala
+        if (sim >= 0.85) {
+            if (sim > maiorSimilaridade) {
+                maiorSimilaridade = sim;
+                melhorChave = chaveExistente;
+            }
+        }
+    }
+
+    if (melhorChave && (maiorSimilaridade >= 0.70 || (salaBuscaNorm && salaBuscaNorm !== 'direto'))) {
+        return melhorChave;
+    }
+
+    return null;
+}
+
 const mapaNomesQuadras = {
     'PAIN II': 'PAINEIRAS II',
     'PAIN': 'PAINEIRAS',
@@ -440,7 +532,8 @@ function salvarEventosMemorial(registrosMemorial, origem = 'bubble') {
                 const localSepultura = formatarLocalCemiterio(rawLocal);
                 const inicio = item.data_inicio || item.hora_inicio || null;
                 const fim = item.data_fim || item.hora_termino || null;
-                const visivel = item.visivel !== undefined ? (item.visivel ? 1 : 0) : 1;
+                const ehArquivado = item.arquivado === true || item.arquivado === 'true' || item.arquivado === 1;
+                const visivel = (item.visivel !== undefined ? (item.visivel ? 1 : 0) : 1) && (!ehArquivado ? 1 : 0);
 
                 stmt.run(
                     idMemorial,
@@ -1049,8 +1142,10 @@ function executarCruzamentoSQLite(dataReferencia) {
                         const ehCremacao = (i.tipo_servico && i.tipo_servico.includes('CREMA')) || nomeServico.includes('CREMAÇÃO');
                         const ehSepultamento = (grupoServico.includes('SEPULTAMENTO') || (i.tipo_servico && (i.tipo_servico.includes('SEPULTAMENTO') || i.tipo_servico.includes('INUMAÇÃO'))));
 
-                        if (mapaPorPessoa.has(chave)) {
-                            const reg = mapaPorPessoa.get(chave);
+                        const chaveEncontrada = buscarChaveNoMapa(chave, i.sala_recurso, mapaPorPessoa);
+
+                        if (chaveEncontrada) {
+                            const reg = mapaPorPessoa.get(chaveEncontrada);
                             reg.id_intuo = i.id_intuo || reg.id_intuo;
                             reg.origem_dados = reg.id_memorial ? 'CRUZADO (MEMORIAL + INTUO)' : 'INTUO';
 
@@ -1126,7 +1221,15 @@ function executarCruzamentoSQLite(dataReferencia) {
                     });
 
                     mapaPorPessoa.forEach((reg, chave) => {
-                        const ed = mapaEdicoes.get(chave) || (reg.id_intuo && mapaEdicoes.get(`intuo_${reg.id_intuo}`)) || (reg.id_memorial && mapaEdicoes.get(`mem_${reg.id_memorial}`));
+                        let ed = mapaEdicoes.get(chave) || (reg.id_intuo && mapaEdicoes.get(`intuo_${reg.id_intuo}`)) || (reg.id_memorial && mapaEdicoes.get(`mem_${reg.id_memorial}`));
+                        if (!ed) {
+                            for (const [chaveEd, objEd] of mapaEdicoes.entries()) {
+                                if (calcularSimilaridade(chave, chaveEd) >= 0.85) {
+                                    ed = objEd;
+                                    break;
+                                }
+                            }
+                        }
                         if (ed) {
                             if (ed.nome_falecido) reg.nome_falecido = ed.nome_falecido;
                             if (ed.sala) {
@@ -1178,26 +1281,50 @@ function executarCruzamentoSQLite(dataReferencia) {
                         }
                     });
 
-                    const listaFinal = Array.from(mapaPorPessoa.values()).filter(item => {
+                    const listaSemFiltro = Array.from(mapaPorPessoa.values()).filter(item => {
                         if (item.visivel === 0) return false;
                         if (ehServicoPet(item)) return false;
-
-                        const tipo = String(item.tipo_servico || '').toUpperCase();
-                        const dest = String(item.destino || '').toUpperCase();
-                        const salaNorm = String(item.sala_normalizada || '').toLowerCase();
-                        const sala = String(item.sala || '').trim().toLowerCase();
-                        const ehSemSala = !sala || sala === 'direto' || salaNorm === 'direto' || sala === 'n/d' || sala === '-' || sala === 'null';
-
-                        // Regra: toda cremação que for direta e não associada a velório não aparece
-                        const ehCremacao = tipo.includes('CREMA') || dest.includes('CREMA');
-                        const ehVelorio = tipo.includes('VELÓRIO') || (!ehSemSala && item.id_memorial);
-
-                        if (ehCremacao && ehSemSala && !ehVelorio) {
-                            return false;
-                        }
-
                         return true;
                     });
+
+                    // Desduplicação inteligente final
+                    const mapaDesduplicado = new Map();
+                    listaSemFiltro.forEach(item => {
+                        let chaveExistente = null;
+                        for (const [k, exist] of mapaDesduplicado.entries()) {
+                            const mesmaSala = item.sala_normalizada && exist.sala_normalizada && item.sala_normalizada !== 'direto' && item.sala_normalizada === exist.sala_normalizada;
+                            const sim = calcularSimilaridade(item.nome_falecido, exist.nome_falecido);
+                            if ((mesmaSala && sim >= 0.70) || sim >= 0.88) {
+                                chaveExistente = k;
+                                break;
+                            }
+                        }
+
+                        if (chaveExistente) {
+                            const exist = mapaDesduplicado.get(chaveExistente);
+                            if (item.id_memorial && !exist.id_memorial) {
+                                exist.id_memorial = item.id_memorial;
+                                exist.foto_url = item.foto_url || exist.foto_url;
+                                exist.qr_code_memorial = item.qr_code_memorial || exist.qr_code_memorial;
+                                exist.link_memorial = item.link_memorial || exist.link_memorial;
+                                exist.origem_dados = 'CRUZADO (MEMORIAL + INTUO)';
+                            }
+                            if (item.id_intuo && !exist.id_intuo) {
+                                exist.id_intuo = item.id_intuo;
+                                exist.origem_dados = exist.id_memorial ? 'CRUZADO (MEMORIAL + INTUO)' : 'INTUO';
+                            }
+                            if (item.destino && item.destino !== 'CONSULTE A ADM' && exist.destino === 'CONSULTE A ADM') {
+                                exist.destino = item.destino;
+                            }
+                            if (item.velorio_online && !exist.velorio_online) {
+                                exist.velorio_online = item.velorio_online;
+                            }
+                        } else {
+                            mapaDesduplicado.set(item.chave_cruzamento || normalizarTexto(item.nome_falecido), { ...item });
+                        }
+                    });
+
+                    const listaFinal = Array.from(mapaDesduplicado.values());
 
                     // DIAGNÓSTICO
                     diagnosticarCruzamento(

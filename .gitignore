@@ -140,6 +140,8 @@ vite.config.ts.timestamp-*
 
 # Ignore local video files and editor temporary exports
 painel/videos/*.mp4
+painel/videos/*.mov
+painel/videos/*.webm
 painel/js/Untitled*.css
 painel/js/Untitled*.txt
-backend/data/*.sqlite
+backend/data/*.sqlite*

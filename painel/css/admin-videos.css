@@ -5,15 +5,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
 :root {
-    --verde-primario: #01813D;
-    --verde-hover: #016632;
-    --cinza-claro: #F3F4F6;
-    --cinza-borda: #D1D5DB;
+    --verde-primario: #2C5740;
+    --verde-hover: #1B3829;
+    --cinza-claro: #F4EDE5;
+    --cinza-borda: rgba(122, 92, 69, 0.22);
     --branco: #FFFFFF;
-    --texto-escuro: #1F2937;
-    --texto-claro: #6B7280;
+    --texto-escuro: #272C28;
+    --texto-claro: #68726A;
+    --dourado: #C69B56;
     --bordas: 12px;
-    --sombra: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --sombra: 0 8px 24px rgba(44, 87, 64, 0.08), 0 2px 6px rgba(44, 87, 64, 0.04);
 }
 
 * {
@@ -24,7 +25,7 @@
 
 body {
     font-family: 'Poppins', sans-serif;
-    background-color: #F9FAFB;
+    background-color: #FAF7F2;
     color: var(--texto-escuro);
     line-height: 1.5;
 }
@@ -41,12 +42,13 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: var(--verde-primario);
+    background: linear-gradient(135deg, var(--verde-primario) 0%, var(--verde-hover) 100%);
     color: var(--branco);
     padding: 1.5rem 2rem;
     border-radius: var(--bordas);
     margin-bottom: 2rem;
-    box-shadow: var(--sombra);
+    box-shadow: 0 6px 20px rgba(27, 56, 41, 0.2);
+    border-bottom: 2.5px solid rgba(198, 155, 86, 0.45);
     flex-wrap: wrap;
     gap: 1rem;
 }

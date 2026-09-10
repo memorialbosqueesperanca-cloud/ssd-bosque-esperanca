@@ -33,15 +33,15 @@
         .header-title {
             font-size: 20px;
             font-weight: 800;
-            color: #01813D;
+            color: #2C5740;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         .header-date {
             font-size: 13px;
-            color: #718096;
+            color: #68726A;
             margin-top: 4px;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         /* Barra de Controle de Datas e Ações */
@@ -51,9 +51,10 @@
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            background: #EDF2F7;
+            background: #F4EDE5;
             padding: 12px 16px;
             border-radius: 8px;
+            border: 1px solid rgba(122, 92, 69, 0.15);
             margin-bottom: 20px;
         }
         .nav-date-group {
@@ -63,20 +64,20 @@
             flex-wrap: wrap;
         }
         .date-picker-input {
-            border: 1px solid #CBD5E0;
+            border: 1.5px solid rgba(122, 92, 69, 0.25);
             border-radius: 6px;
             padding: 7px 12px;
             font-size: 13px;
             font-weight: 600;
-            color: #2D3748;
+            color: #272C28;
             background: #FFFFFF;
             cursor: pointer;
             outline: none;
             transition: border-color 0.2s;
         }
         .date-picker-input:focus {
-            border-color: #01813D;
-            box-shadow: 0 0 0 2px rgba(1, 129, 61, 0.2);
+            border-color: #2C5740;
+            box-shadow: 0 0 0 2px rgba(44, 87, 64, 0.2);
         }
 
         .actions-group {
@@ -86,12 +87,12 @@
         }
 
         .btn {
-            background: #01813D;
+            background: #2C5740;
             color: #FFFFFF;
             border: none;
             padding: 8px 14px;
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 700;
             border-radius: 6px;
             cursor: pointer;
             display: inline-flex;
@@ -99,25 +100,26 @@
             gap: 6px;
             text-decoration: none;
             transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(44, 87, 64, 0.15);
         }
-        .btn:hover { background: #01622e; }
+        .btn:hover { background: #1B3829; }
         .btn:active { transform: scale(0.98); }
-        .btn-secondary { background: #4A5568; }
-        .btn-secondary:hover { background: #2D3748; }
+        .btn-secondary { background: #7A5C45; }
+        .btn-secondary:hover { background: #4D3728; }
         .btn-outline {
             background: #FFFFFF;
-            color: #4A5568;
-            border: 1px solid #CBD5E0;
+            color: #272C28;
+            border: 1px solid rgba(122, 92, 69, 0.25);
         }
         .btn-outline:hover {
-            background: #F7FAFC;
-            border-color: #A0AEC0;
-            color: #1A202C;
+            background: #FAF7F2;
+            border-color: #7A5C45;
+            color: #1B3829;
         }
         .btn-outline.active {
-            background: #01813D;
+            background: #2C5740;
             color: #FFFFFF;
-            border-color: #01813D;
+            border-color: #2C5740;
         }
 
         .resumo-cards {
@@ -127,20 +129,20 @@
             margin-bottom: 24px;
         }
         .card-resumo {
-            background: #EDF2F7;
+            background: #F4EDE5;
             padding: 12px 16px;
             border-radius: 6px;
-            border-left: 4px solid #01813D;
+            border-left: 4px solid #2C5740;
         }
         .card-resumo__num {
             font-size: 22px;
             font-weight: 800;
-            color: #1A202C;
+            color: #272C28;
         }
         .card-resumo__label {
             font-size: 12px;
-            font-weight: 600;
-            color: #718096;
+            font-weight: 700;
+            color: #7A5C45;
             text-transform: uppercase;
         }
 
@@ -150,7 +152,7 @@
             font-size: 12px;
         }
         thead th {
-            background: #01813D;
+            background: #2C5740;
             color: #FFFFFF;
             text-align: left;
             padding: 10px 8px;
@@ -159,23 +161,24 @@
             font-size: 11px;
             letter-spacing: 0.5px;
         }
-        tbody tr { border-bottom: 1px solid #E2E8F0; }
-        tbody tr:nth-child(even) { background: #F7FAFC; }
+        tbody tr { border-bottom: 1px solid rgba(122, 92, 69, 0.12); }
+        tbody tr:nth-child(even) { background: #FAF7F2; }
         tbody td {
             padding: 10px 8px;
             vertical-align: middle;
         }
-        .col-num { width: 30px; text-align: center; font-weight: 700; color: #718096; }
-        .col-nome { font-weight: 700; color: #1A202C; }
+        .col-num { width: 30px; text-align: center; font-weight: 700; color: #68726A; }
+        .col-nome { font-weight: 800; color: #1B3829; }
         .badge-sala {
             display: inline-block;
-            background: #E2E8F0;
+            background: #F4EDE5;
+            color: #7A5C45;
             padding: 2px 6px;
             border-radius: 4px;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
         }
-        .badge-tipo { font-size: 11px; color: #4A5568; font-weight: 600; }
+        .badge-tipo { font-size: 11px; color: #68726A; font-weight: 600; }
         .badge-status {
             display: inline-block;
             font-size: 11px;
@@ -191,8 +194,8 @@
             margin-top: 32px;
             text-align: center;
             font-size: 11px;
-            color: #A0AEC0;
-            border-top: 1px solid #E2E8F0;
+            color: #68726A;
+            border-top: 1px solid rgba(122, 92, 69, 0.15);
             padding-top: 12px;
         }
 
@@ -201,7 +204,7 @@
             position: fixed;
             bottom: 24px;
             right: 24px;
-            background: #2D3748;
+            background: #272C28;
             color: #FFFFFF;
             padding: 12px 20px;
             border-radius: 6px;
@@ -220,21 +223,21 @@
             transform: translateY(0);
             opacity: 1;
         }
-        .toast.success { background: #01813D; }
-        .toast.error { background: #E53E3E; }
+        .toast.success { background: #2C5740; }
+        .toast.error { background: #A84242; }
 
         @media print {
             body { background: #FFFFFF; padding: 0; }
             .container { box-shadow: none; padding: 0; max-width: 100%; }
             .toolbar, .toast { display: none !important; }
             thead th {
-                background: #01813D !important;
+                background: #2C5740 !important;
                 color: #FFFFFF !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
             tbody tr:nth-child(even) {
-                background: #F7FAFC !important;
+                background: #FAF7F2 !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
@@ -460,14 +463,6 @@
                         return false;
                     }
 
-                    const ehSemSala = !salaRaw || salaRaw === 'direto' || salaRaw === 'n/d' || salaRaw === '-' || salaRaw === 'null';
-
-                    const ehCremacao = tipo.includes('CREMA') || dest.includes('CREMA');
-                    const ehVelorio = tipo.includes('VELÓRIO') || (!ehSemSala && item.id_memorial);
-
-                    if (ehCremacao && ehSemSala && !ehVelorio) {
-                        return false;
-                    }
                     return true;
                 });
 

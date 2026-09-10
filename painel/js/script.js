@@ -31,7 +31,7 @@ function calcularStatus(data_inicio, data_fim) {
     } else if (agora >= trintaMinAntes && agora <= vinteMinDepois) {
         return { texto: 'Encerrando', cor: '#FAA507' }; // Laranja
     } else {
-        return { texto: 'Encerrado', cor: '#cf0303' }; // Cinza
+        return { texto: 'Encerrado', cor: '#cf0303' }; // Vermelho
     }
 }
 
@@ -115,12 +115,9 @@ function renderizar(lista) {
         const tipo = String(item.tipo_servico || '').toUpperCase();
         const dest = String(item.destino || '').toUpperCase();
         const salaStr = item.sala ? String(item.sala).trim().toLowerCase() : '';
-        const ehSemSala = !salaStr || salaStr === 'direto' || salaStr === 'n/d' || salaStr === '-' || salaStr === 'null';
 
-        const ehCremacao = tipo.includes('CREMA') || dest.includes('CREMA');
-        const ehVelorio = tipo.includes('VELÓRIO') || (!ehSemSala && item.id_memorial);
-
-        if (ehCremacao && ehSemSala && !ehVelorio) {
+        // Ignora serviços PET / Cremação PET
+        if (tipo.includes('PET') || dest.includes('PET') || salaStr.includes('pet')) {
             return false;
         }
         return true;

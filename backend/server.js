@@ -259,20 +259,39 @@ async function executarPainelSSD(dataEspecifica, forcarIntuo = true) {
         // 2. Busca e salva dados do MEMORIAL (Bubble) no SQLite
         try {
             if (BUBBLE_API_URL && BUBBLE_TOKEN) {
-                const respostaBubble = await axios.get(BUBBLE_API_URL, {
+                // Busca os registros mais recentemente modificados (captura alterações de data, nome, foto, arquivamento)
+                const resModificados = await axios.get(BUBBLE_API_URL, {
+                    headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` },
+                    params: { 
+                        sort_field: 'Modified Date',
+                        descending: 'true',
+                        limit: 100
+                    },
+                    timeout: 7000
+                });
+                const itensModificados = resModificados.data?.response?.results || [];
+
+                // Busca também por restrição de data do dia alvo
+                const resDia = await axios.get(BUBBLE_API_URL, {
                     headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` },
                     params: { 
                         constraints: JSON.stringify([
                             { key: "data_inicio", constraint_type: "less than", value: fimDoDia }, 
                             { key: "data_fim", constraint_type: "greater than", value: inicioDoDia }
-                        ]) 
+                        ]),
+                        limit: 100
                     },
-                    timeout: 5000
+                    timeout: 7000
                 });
+                const itensDia = resDia.data?.response?.results || [];
 
-                const memoriais = respostaBubble.data?.response?.results || [];
-                await salvarEventosMemorial(memoriais, 'bubble');
-                console.log(`✅ [MEMORIAL -> SQLITE] ${memoriais.length} registro(s) persistidos no banco.`);
+                const mapaMemoriais = new Map();
+                itensModificados.forEach(item => mapaMemoriais.set(item._id, item));
+                itensDia.forEach(item => mapaMemoriais.set(item._id, item));
+                const todosMemoriais = Array.from(mapaMemoriais.values());
+
+                await salvarEventosMemorial(todosMemoriais, 'bubble');
+                console.log(`✅ [MEMORIAL -> SQLITE] ${todosMemoriais.length} registro(s) sincronizados e atualizados do Bubble.`);
             }
         } catch (erroBubble) {
             console.warn("⚠️ [MEMORIAL] Bubble indisponível ou offline:", erroBubble.message);

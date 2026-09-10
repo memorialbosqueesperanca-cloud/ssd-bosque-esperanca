@@ -49,19 +49,14 @@ body, html {
     overflow: hidden;
 }
 
-/* Camada de Papel de Parede Acolhedor */
+/* Camada de Fundo Acolhedor Limpo (Sem logos) */
 .sala-body::before {
     content: "";
     position: absolute;
     inset: 0;
-    background-image: url('../fundo-pronto.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    opacity: 0.92;
+    background: radial-gradient(circle at 50% 35%, #FFFFFF 0%, #FAF7F2 65%, #F4EDE5 100%);
     z-index: 0;
     pointer-events: none;
-    filter: saturate(0.85) sepia(0.08);
 }
 
 .bloco-tela {

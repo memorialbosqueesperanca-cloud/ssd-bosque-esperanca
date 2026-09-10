@@ -1,15 +1,36 @@
 /* ==========================================================================
-   1. Variáveis Globais (Paleta de Cores e Fontes)
+   1. Variáveis Globais (Paleta Bosque Acolhedor: Tons Terrosos, Pastel e Sálvia Nobre)
    ========================================================================== */
 
 :root {
-    --cor-primaria: #01813D;
-    --cor-secundaria: #B54708;
-    --cor-icone: #FAA507;
-    --cor-texto-principal: #424543;
-    --cor-fundo: #FFFFFF;
+    /* Paleta Bosque Acolhedor: Tons Terrosos, Pastel e Sálvia Nobre */
+    --cor-primaria: #2C5740;           /* Verde Musgo / Sálvia Nobre Acolhedor */
+    --cor-primaria-dark: #1B3829;      /* Verde Floresta Profundo */
+    --cor-primaria-light: #3D6F53;     /* Verde Sálvia Médio */
+    --cor-primaria-pastel: #EAF2EC;    /* Sálvia Pastel Suave */
+    
+    --cor-terrosa: #7A5C45;            /* Argila / Terra Nobre */
+    --cor-terrosa-dark: #4D3728;       /* Café / Madeira Quente */
+    --cor-terrosa-light: #F4EDE5;      /* Linho / Areia Pastel */
+    --cor-terrosa-borda: rgba(122, 92, 69, 0.22);
+
+    --cor-dourado: #C69B56;            /* Ouro Champagne Acetinado */
+    --cor-dourado-claro: #E8CA94;      /* Champagne Claro */
+    --cor-dourado-bg: rgba(198, 155, 86, 0.18);
+
+    --cor-fundo: #FAF7F2;              /* Linho / Areia Acolhedor */
+    --cor-fundo-card: #FFFFFF;         /* Branco Seda */
+    --cor-borda-suave: rgba(122, 92, 69, 0.15);
+
+    --cor-texto-principal: #272C28;    /* Café Profundo / Carvão Quente */
+    --cor-texto-secundario: #68726A;   /* Sálvia Acinzentado */
+    --cor-texto-terroso: #7A5C45;      /* Tom Terroso de Leitura */
     --cor-texto-light: #FFFFFF;
-    --fonte-principal: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    
+    --cor-secundaria: #7A5C45;         /* Destaque terroso / âmbar nobre */
+    --cor-icone: #C69B56;              /* Ouro Champagne */
+
+    --fonte-principal: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
 
     /* Tamanhos responsivos otimizados para LED 640x480 e limitados para telas widescreen */
     --foto-size: clamp(60px, 8vw, 80px);
@@ -19,6 +40,9 @@
     --row-gap: clamp(16px, 2vw, 24px);
     --font-body: clamp(16px, 2vw, 20px);
     --font-header: clamp(24px, 3vw, 28px);
+
+    --sombra-card: 0 8px 24px rgba(44, 87, 64, 0.08);
+    --sombra-elevada: 0 12px 32px rgba(44, 87, 64, 0.12);
 }
 
 /* Ajustes para telas de notebook (768px+) - reduz escala para manter visual do painel */
@@ -38,14 +62,31 @@
    2. Estilos Base e Reset
    ========================================================================== */
 
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
 body, html {
     margin: 0;
     padding: 0;
-    width: 100%;
+    width: 100vw;
     height: 100vh;
     font-family: var(--fonte-principal);
     background-color: var(--cor-fundo);
+    color: var(--cor-texto-principal);
     overflow: hidden;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Camada de Fundo Acolhedor Limpo (Sem logos) */
+body::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 35%, #FFFFFF 0%, #FAF7F2 65%, #F4EDE5 100%);
+    z-index: 0;
+    pointer-events: none;
 }
 
 /* ==========================================================================
@@ -53,6 +94,8 @@ body, html {
    ========================================================================== */
 
 .app-container {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -62,33 +105,36 @@ body, html {
 }
 
 /* ==========================================================================
-   4. Cabeçalho
+   4. Cabeçalho (Verde Musgo Nobre com Linha Champagne)
    ========================================================================== */
 
 .painel-header {
     width: 100%;
-    background-color: var(--cor-primaria);
+    background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-primaria-dark) 100%);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: var(--header-padding) 8%;
     box-sizing: border-box;
     min-height: clamp(80px, 10vw, 160px);
-    position: relative; /* Container para centralização exata da data */
+    position: relative;
+    border-bottom: 2.5px solid rgba(198, 155, 86, 0.45);
+    box-shadow: 0 6px 20px rgba(27, 56, 41, 0.25);
 }
 
 .painel-header__logo {
-    width: clamp(120px, 14vw, 220px); /* Reduzido para ficar proporcional aos textos */
+    width: clamp(120px, 14vw, 220px);
     height: auto;
-    max-height: clamp(40px, 5vw, 65px); /* Trava a altura para não sobressair */
+    max-height: clamp(40px, 5vw, 65px);
     object-fit: contain;
     flex-shrink: 0;
+    filter: brightness(1.05);
 }
 
 .painel-header__titulo {
     color: var(--cor-texto-light);
     font-size: var(--font-header);
-    font-weight: 700;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     text-align: center;
@@ -96,17 +142,19 @@ body, html {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    white-space: nowrap; /* Evita quebra de linha indesejada */
+    white-space: nowrap;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .header-relogio {
     color: var(--cor-texto-light);
     font-size: calc(var(--font-header) * 1.2);
-    font-weight: 700;
+    font-weight: 800;
     white-space: nowrap;
     flex-shrink: 0;
     width: 17%;
     text-align: left;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .painel-status {
@@ -115,22 +163,22 @@ body, html {
     justify-content: space-between;
     gap: 1rem;
     padding: clamp(10px, 1.2vw, 16px) 8%;
-    background: #f9f3d8;
-    color: #333333;
-    border-bottom: 1px solid #e7d5a0;
+    background: var(--cor-terrosa-light);
+    color: var(--cor-texto-principal);
+    border-bottom: 1px solid var(--cor-terrosa-borda);
     box-sizing: border-box;
 }
 
 .painel-status--online {
-    background: #e6f7ec;
-    border-color: #b6e1c2;
-    color: #1d3f2c;
+    background: var(--cor-primaria-pastel);
+    border-color: rgba(44, 87, 64, 0.25);
+    color: var(--cor-primaria-dark);
 }
 
 .painel-status--offline {
-    background: #fde6e6;
-    border-color: #f1b5b5;
-    color: #6f2727;
+    background: #FDF2F2;
+    border-color: #F8B4B4;
+    color: #9B1C1C;
 }
 
 .painel-status__texto {
@@ -140,11 +188,11 @@ body, html {
 }
 
 /* ==========================================================================
-   4. Botão de Emergência no Header
+   5. Botão de Emergência e Rodapé Unificado
    ========================================================================== */
 
 .botao-emergencia {
-    background: var(--cor-secundaria);
+    background: var(--cor-primaria);
     color: var(--cor-texto-light);
     border: none;
     border-radius: 999px;
@@ -153,10 +201,11 @@ body, html {
     cursor: pointer;
     transition: transform 0.2s ease, filter 0.2s ease;
     font-size: clamp(0.8rem, 1.5vw, 1rem);
+    box-shadow: 0 4px 12px rgba(44, 87, 64, 0.15);
 }
 
 .botao-emergencia:hover {
-    filter: brightness(1.05);
+    filter: brightness(1.08);
     transform: translateY(-1px);
 }
 
@@ -174,7 +223,7 @@ body, html {
 
 .indicador-paginacao {
     text-align: center;
-    color: rgba(66, 69, 67, 0.7);
+    color: var(--cor-texto-secundario);
     font-size: clamp(12px, 1.2vw, 15px);
     font-weight: 700;
     text-transform: uppercase;
@@ -188,7 +237,7 @@ body, html {
     align-items: center;
     justify-content: center;
     gap: 12px;
-    opacity: 0.35;
+    opacity: 0.45;
     transition: opacity 0.3s ease;
 }
 
@@ -199,7 +248,7 @@ body, html {
 .botao-rodape-discreto,
 .botao-emergencia-discreto {
     background: transparent;
-    color: rgba(66, 69, 67, 0.8);
+    color: var(--cor-texto-secundario);
     border: none;
     padding: 4px 8px;
     font-size: 13px;
@@ -208,29 +257,31 @@ body, html {
     text-transform: lowercase;
     letter-spacing: 0.5px;
     transition: all 0.2s ease;
+    font-weight: 500;
 }
 
 .botao-rodape-discreto:hover,
 .botao-emergencia-discreto:hover {
-    color: #01813D;
+    color: var(--cor-primaria);
     text-decoration: underline;
 }
 
 .separador-discreto {
-    color: rgba(66, 69, 67, 0.4);
+    color: var(--cor-terrosa-borda);
     font-size: 11px;
     user-select: none;
 }
 
 /* ==========================================================================
-   5. Painel de Emergência Modal
+   6. Painel de Emergência Modal
    ========================================================================== */
 
 .emergencia-overlay {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.65);
+    background: rgba(27, 56, 41, 0.6);
+    backdrop-filter: blur(4px);
     z-index: 10000;
     align-items: center;
     justify-content: center;
@@ -243,10 +294,11 @@ body, html {
 
 .emergencia-panel {
     width: min(560px, 100%);
-    background: #ffffff;
+    background: var(--cor-fundo-card);
     border-radius: 1rem;
     padding: 1.75rem;
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 24px 48px rgba(27, 56, 41, 0.22);
+    border: 1px solid var(--cor-borda-suave);
     position: relative;
     max-height: 90vh;
     overflow-y: auto;
@@ -259,7 +311,7 @@ body, html {
     background: transparent;
     border: none;
     font-size: 1.75rem;
-    color: #333333;
+    color: var(--cor-texto-secundario);
     cursor: pointer;
     width: 2rem;
     height: 2rem;
@@ -267,22 +319,24 @@ body, html {
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .fechar-emergencia:hover {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: var(--cor-terrosa-light);
+    color: var(--cor-primaria);
 }
 
 .emergencia-panel h2 {
     margin: 0 0 0.75rem;
     font-size: clamp(1.35rem, 2vw, 1.75rem);
     color: var(--cor-primaria);
+    font-weight: 800;
 }
 
 .emergencia-panel p {
     margin: 0 0 1rem;
-    color: #444444;
+    color: var(--cor-texto-secundario);
     line-height: 1.6;
 }
 
@@ -296,11 +350,12 @@ body, html {
 
 .emergencia-upload input[type="file"] {
     flex: 1 1 280px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--cor-terrosa-borda);
     border-radius: 0.75rem;
     padding: 0.65rem 0.85rem;
-    background: #fafafa;
+    background: var(--cor-fundo);
     font-size: 0.9rem;
+    color: var(--cor-texto-principal);
 }
 
 .form-emergencia {
@@ -320,23 +375,24 @@ body, html {
     flex-direction: column;
     gap: 0.35rem;
     font-size: 0.9rem;
-    color: #333333;
+    color: var(--cor-texto-principal);
 }
 
 .form-group input {
     width: 100%;
-    border: 1px solid #cacaca;
+    border: 1px solid var(--cor-terrosa-borda);
     border-radius: 0.75rem;
     padding: 0.85rem 0.9rem;
     font-size: 0.95rem;
     background: #ffffff;
-    color: #333333;
-    transition: border-color 0.2s ease;
+    color: var(--cor-texto-principal);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .form-group input:focus {
-    outline: 2px solid rgba(1, 129, 61, 0.2);
+    outline: none;
     border-color: var(--cor-primaria);
+    box-shadow: 0 0 0 3px rgba(44, 87, 64, 0.15);
 }
 
 .emergencia-actions {
@@ -356,22 +412,23 @@ body, html {
     font-weight: 700;
     cursor: pointer;
     transition: transform 0.15s ease, filter 0.15s ease;
+    box-shadow: 0 4px 12px rgba(44, 87, 64, 0.15);
 }
 
 .emergencia-actions button:hover {
     transform: translateY(-1px);
-    filter: brightness(1.05);
+    filter: brightness(1.08);
 }
 
 .emergencia-info p {
     margin: 0.5rem 0;
-    color: #333333;
+    color: var(--cor-texto-secundario);
     line-height: 1.5;
     font-size: 0.9rem;
 }
 
 /* ==========================================================================
-   5. Conteúdo Principal
+   7. Conteúdo Principal
    ========================================================================== */
 
 .painel-main {
@@ -392,7 +449,7 @@ body, html {
 }
 
 /* ==========================================================================
-   6. Títulos das colunas
+   8. Títulos das colunas
    ========================================================================== */
 
 .colunas-header {
@@ -400,16 +457,18 @@ body, html {
     grid-template-columns: var(--icon-size) var(--foto-size) 2.5fr 0.8fr 1.3fr 1.4fr 17%;
     align-items: center;
     gap: var(--row-gap);
-    padding: clamp(6px, 0.8vw, 14px) 8%;
+    padding: clamp(8px, 1vw, 16px) 8%;
     box-sizing: border-box;
-    background-color: #f5f5f5;
+    background: rgba(244, 237, 229, 0.92);
+    backdrop-filter: blur(8px);
     border-bottom: 2px solid var(--cor-primaria);
+    box-shadow: 0 2px 8px rgba(44, 87, 64, 0.06);
 }
 
 .colunas-header span {
     font-family: var(--fonte-principal);
-    font-size: clamp(0.7rem, 1.1vw, 1rem);
-    font-weight: 700;
+    font-size: clamp(0.72rem, 1.1vw, 1.05rem);
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--cor-primaria);
@@ -424,7 +483,7 @@ body, html {
 }
 
 /* ==========================================================================
-   7. Linha de Informação (grid de 7 colunas)
+   9. Linha de Informação (grid de 7 colunas)
    ========================================================================== */
 
 .info-row {
@@ -437,7 +496,7 @@ body, html {
     gap: var(--row-gap);
     padding: 0 8%;
     box-sizing: border-box;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--cor-borda-suave);
     transition: background-color 0.3s ease;
 }
 
@@ -447,24 +506,50 @@ body, html {
 }
 
 .info-row:hover {
-    background-color: #fafafa;
+    background-color: rgba(255, 255, 255, 0.65);
 }
 
 .info-row__icon {
-    color: var(--cor-icone);
+    color: var(--cor-dourado);
     width: 100%;
     height: 100%;
+    filter: drop-shadow(0 1px 2px rgba(198, 155, 86, 0.3));
+}
+
+/* Moldura Circular Acolhedora da Foto */
+.info-row__foto-wrapper {
+    width: var(--foto-size);
+    height: var(--foto-size);
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--cor-terrosa-light);
+    border: clamp(2px, 0.3vh, 3.5px) solid var(--cor-primaria);
+    outline: 1.5px solid var(--cor-dourado);
+    outline-offset: 1px;
+    box-shadow: 0 4px 14px rgba(44, 87, 64, 0.15);
+    flex-shrink: 0;
+}
+
+.info-row__foto {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 15%;
 }
 
 /* ==========================================================================
-   5. Modal de Edição de Emergência
+   10. Modal de Edição de Emergência
    ========================================================================== */
 
 .emergencia-edit-overlay {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(27, 56, 41, 0.65);
+    backdrop-filter: blur(4px);
     z-index: 10001;
     align-items: center;
     justify-content: center;
@@ -477,18 +562,19 @@ body, html {
 
 .emergencia-edit-panel {
     width: min(500px, 95%);
-    background: #ffffff;
+    background: var(--cor-fundo-card);
     border-radius: 1rem;
     padding: 1.5rem;
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 24px 48px rgba(27, 56, 41, 0.25);
+    border: 1px solid var(--cor-borda-suave);
     position: relative;
 }
 
 .emergencia-edit-panel h3 {
     margin: 0 0 1rem 0;
-    color: var(--cor-texto-principal);
+    color: var(--cor-primaria);
     font-size: 1.25rem;
-    font-weight: 600;
+    font-weight: 800;
 }
 
 .emergencia-edit-form {
@@ -503,22 +589,24 @@ body, html {
 }
 
 .emergencia-edit-form label {
-    font-weight: 500;
+    font-weight: 600;
     color: var(--cor-texto-principal);
     font-size: 0.9rem;
 }
 
 .emergencia-edit-form input {
     padding: 0.75rem;
-    border: 2px solid #e1e5e9;
+    border: 1.5px solid var(--cor-terrosa-borda);
     border-radius: 0.5rem;
     font-size: 1rem;
-    transition: border-color 0.3s ease;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    color: var(--cor-texto-principal);
 }
 
 .emergencia-edit-form input:focus {
     outline: none;
-    border-color: var(--cor-secundaria);
+    border-color: var(--cor-primaria);
+    box-shadow: 0 0 0 3px rgba(44, 87, 64, 0.15);
 }
 
 .emergencia-edit-actions {
@@ -533,65 +621,43 @@ body, html {
     padding: 0.75rem 1rem;
     border: none;
     border-radius: 0.5rem;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .emergencia-edit-actions .btn-salvar {
-    background: var(--cor-secundaria);
+    background: var(--cor-primaria);
     color: white;
 }
 
 .emergencia-edit-actions .btn-salvar:hover {
-    background: #a33a06;
+    background: var(--cor-primaria-dark);
     transform: translateY(-1px);
 }
 
 .emergencia-edit-actions .btn-excluir {
-    background: #dc3545;
+    background: #A84242;
     color: white;
 }
 
 .emergencia-edit-actions .btn-excluir:hover {
-    background: #c82333;
+    background: #8F3030;
     transform: translateY(-1px);
 }
 
 .emergencia-edit-actions .btn-cancelar {
-    background: #6c757d;
+    background: var(--cor-texto-secundario);
     color: white;
 }
 
 .emergencia-edit-actions .btn-cancelar:hover {
-    background: #5a6268;
+    background: var(--cor-texto-principal);
     transform: translateY(-1px);
 }
 
 /* ==========================================================================
-   6. Painel de Emergência Modal
-   ========================================================================== */
-.info-row__foto-wrapper {
-    width: var(--foto-size);
-    height: var(--foto-size);
-    border-radius: 50%;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #e8e8e8;
-    flex-shrink: 0;
-}
-
-.info-row__foto {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center 15%;
-}
-
-/* ==========================================================================
-   7. Tipografia
+   11. Tipografia Acolhedora
    ========================================================================== */
 
 .text-default {
@@ -603,10 +669,31 @@ body, html {
     text-overflow: ellipsis;
 }
 
+.info-nome {
+    color: var(--cor-primaria-dark) !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.01em;
+}
+
+.info-sala {
+    color: var(--cor-terrosa) !important;
+    font-weight: 800 !important;
+}
+
+.info-horario {
+    color: var(--cor-texto-principal) !important;
+    font-weight: 600 !important;
+}
+
+.info-destino {
+    color: var(--cor-texto-secundario) !important;
+    font-weight: 600 !important;
+}
+
 .text-highlight {
     color: var(--cor-secundaria);
     font-size: var(--font-body);
-    font-weight: 700;
+    font-weight: 800;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -615,10 +702,11 @@ body, html {
 /* Alinhamento do status na tabela para acompanhar o relógio no topo */
 .info-status {
     text-align: left;
+    font-weight: 800 !important;
 }
 
 /* ==========================================================================
-   8. Telas médias — tablets em paisagem / monitores pequenos
+   12. Telas médias — tablets em paisagem / monitores pequenos
    ========================================================================== */
 
 @media (max-width: 1100px) {
@@ -642,18 +730,14 @@ body, html {
 }
 
 /* ==========================================================================
-   9. Telas estreitas e modo retrato — celulares e tablets em retrato (< 600px) e TVs Verticais
-   Prioridade: nome + sala + status sempre visíveis e completos.
-   Horário e destino ficam em linha secundária abaixo.
+   13. Telas estreitas e modo retrato — celulares e TVs Verticais (< 600px)
    ========================================================================== */
 
 @media (max-width: 600px), (orientation: portrait) {
-    /* Cabeçalho de colunas oculto em telas muito estreitas */
     .colunas-header {
         display: none;
     }
 
-    /* Cabeçalho empilhado */
     .painel-header {
         flex-direction: column;
         align-items: center;
@@ -674,11 +758,6 @@ body, html {
         white-space: normal;
     }
 
-    /*
-     * Card em grid de 2 linhas com áreas nomeadas:
-     * Linha 1 (primária):  foto | nome | sala | status
-     * Linha 2 (secundária): .    | horário | destino | destino
-     */
     .info-row {
         display: grid;
         grid-template-columns: clamp(40px, 11vw, 56px) 1fr auto auto;
@@ -690,7 +769,7 @@ body, html {
         column-gap: clamp(8px, 2.5vw, 16px);
         row-gap: 4px;
         padding: 12px 5%;
-        border-bottom: 2px solid #f0f0f0;
+        border-bottom: 1px solid var(--cor-borda-suave);
     }
 
     .info-row__icon { display: none; }
@@ -702,11 +781,10 @@ body, html {
         align-self: center;
     }
 
-    /* Linha 1 — itens principais, sempre completos */
     .info-nome {
         grid-area: nome;
         font-size: clamp(0.95rem, 3.8vw, 1.2rem) !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
         white-space: normal !important;
         overflow: visible !important;
         text-overflow: unset !important;
@@ -727,11 +805,10 @@ body, html {
         text-align: right;
     }
 
-    /* Linha 2 — informações secundárias, fonte menor e muted */
     .info-horario {
         grid-area: horario;
         font-size: clamp(0.75rem, 2.6vw, 0.9rem) !important;
-        color: #888 !important;
+        color: var(--cor-texto-secundario) !important;
         font-weight: 500 !important;
         white-space: nowrap;
     }
@@ -739,7 +816,7 @@ body, html {
     .info-destino {
         grid-area: destino;
         font-size: clamp(0.75rem, 2.6vw, 0.9rem) !important;
-        color: #888 !important;
+        color: var(--cor-texto-secundario) !important;
         font-weight: 500 !important;
         white-space: nowrap;
         text-align: right;
@@ -747,7 +824,7 @@ body, html {
 }
 
 /* ==========================================================================
-   10. Telas grandes — TVs Full HD e acima (>= 1920px)
+   14. Telas grandes — TVs Full HD e acima (>= 1920px)
    ========================================================================== */
 
 @media (min-width: 1920px) {
@@ -762,12 +839,12 @@ body, html {
     }
 
     .info-row {
-        border-bottom: 2px solid #ebebeb;
+        border-bottom: 2px solid var(--cor-borda-suave);
     }
 }
 
 /* ==========================================================================
-   11. Telas muito grandes — TVs 4K e painéis (>= 3200px)
+   15. Telas muito grandes — TVs 4K e painéis (>= 3200px)
    ========================================================================== */
 
 @media (min-width: 3200px) {
@@ -782,9 +859,10 @@ body, html {
     }
 
     .info-row {
-        border-bottom: 3px solid #e8e8e8;
+        border-bottom: 3px solid var(--cor-borda-suave);
     }
 }
+
 /* Força a TV a usar a aceleração de hardware para o vídeo */
 #video-overlay, #meuVideo {
     will-change: transform, opacity;
