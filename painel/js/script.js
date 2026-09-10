@@ -25,13 +25,13 @@ function calcularStatus(data_inicio, data_fim) {
     const vinteMinDepois = new Date(fim.getTime() + 20 * 60 * 1000);
 
     if (agora < inicio) {
-        return { texto: 'Previsto', cor: '#3A6B88' }; // Azul ardósia sereno (Comfort)
+        return { texto: 'Previsto', cor: '#012b6f' }; // Azul
     } else if (agora < trintaMinAntes) {
-        return { texto: 'Em andamento', cor: '#2C5740' }; // Verde musgo / institucional
+        return { texto: 'Em andamento', cor: '#026732' }; // Verde original
     } else if (agora >= trintaMinAntes && agora <= vinteMinDepois) {
-        return { texto: 'Encerrando', cor: '#C07A2B' }; // Âmbar caramelo nobre (Comfort)
+        return { texto: 'Encerrando', cor: '#dd9103' }; // Laranja
     } else {
-        return { texto: 'Encerrado', cor: '#9E3D3D' }; // Terracota suave / acolhedor (Comfort)
+        return { texto: 'Encerrado', cor: '#cf0303' }; // Vermelho
     }
 }
 
@@ -140,7 +140,7 @@ function renderizar(lista) {
             }
         }
             
-        const foto = item.foto || item.foto_url || 'videos/logo_bosque.png';
+        const foto = item.foto ? item.foto : 'videos/logo_bosque.png';
 
         linha.className = 'info-row' + (status.texto === 'Encerrado' ? ' info-row--encerrado' : '');
         
@@ -209,15 +209,17 @@ function renderizar(lista) {
             }
         }
 
+        const estiloTextoLongo = `white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2;`;
+
         linha.innerHTML = `
             ${svgSeta}
             <div class="info-row__foto-wrapper">
                 <img class="info-row__foto" src="${foto}" onerror="this.src='videos/logo_bosque.png'">
             </div>
-            <div class="info-nome text-default">${item.nome || 'Homenageado'}</div>
-            <div class="info-sala text-default">${sala}</div>
+            <div class="info-nome text-default" style="${estiloTextoLongo}">${item.nome || 'Homenageado'}</div>
+            <div class="info-sala text-default" style="${estiloTextoLongo}">${sala}</div>
             <div class="info-horario text-default">${formatarHorario(item.data_inicio, item.data_fim)}</div>
-            <div class="info-destino text-default">${destinoTexto}</div>
+            <div class="info-destino text-default" style="${estiloTextoLongo}">${destinoTexto}</div>
             <div class="info-status text-highlight" style="color:${status.cor};">${status.texto}</div>
         `;
         corpo.appendChild(linha);
@@ -533,14 +535,13 @@ function carregarEntradasEmergencia() {
         if (!Array.isArray(parsed)) return [];
         
         const agora = new Date();
-        const limite = new Date(agora.getTime() - 24 * 60 * 60 * 1000);
-        emergencyEntradas = parsed.filter(e => {
-            if (!e.data_fim) return true;
-            const dtFim = new Date(e.data_fim);
-            return isNaN(dtFim.getTime()) || dtFim > limite;
-        });
+        const limite = new Date(agora.getTime() - 4 * 60 * 60 * 1000);
+        emergencyEntradas = parsed.filter(e => new Date(e.data_fim) > limite);
         
-        salvarEntradasEmergencia(); 
+        if (emergencyEntradas.length !== parsed.length) {
+            salvarEntradasEmergencia(); 
+        }
+        
         return emergencyEntradas;
     } catch (err) {
         localStorage.removeItem(EMERGENCY_KEY);
@@ -560,38 +561,53 @@ function normalizarTextoParaComparacao(texto) {
 function mesclarEmergencia(dadosAPI) {
     if (!Array.isArray(dadosAPI)) dadosAPI = [];
     
-    const resultado = [...dadosAPI];
-    
-    // Mescla entradas manuais locais sem apagar nada e evitando duplicidades caso a API oficial já tenha o registro
-    emergencyEntradas.forEach((item, index) => {
-        const nomeManual = normalizarTextoParaComparacao(item.nome || item.nome_falecido);
-        const salaManualNorm = String(item.sala || '').replace(/\D/g, '');
-        
-        const jaExiste = resultado.some(r => {
-            const nomeAPI = normalizarTextoParaComparacao(r.nome || r.nome_falecido);
-            const salaAPINorm = String(r.sala || '').replace(/\D/g, '');
+    if (dadosAPI.length > 0) {
+        let houveExclusao = false;
+        const entradasValidas = emergencyEntradas.filter(manual => {
+            const nomeManual = normalizarTextoParaComparacao(manual.nome);
+            const numSalaManual = String(manual.sala).replace(/\D/g, '');
+            const inicioManual = new Date(manual.data_inicio);
+            const fimManual = new Date(manual.data_fim);
             
-            // 1. Mesmo nome exato
-            if (nomeAPI && nomeManual && nomeAPI === nomeManual) return true;
-            
-            // 2. Mesma sala com nome contido ou parecido
-            if (salaManualNorm && salaAPINorm && salaManualNorm === salaAPINorm) {
-                if (nomeAPI && nomeManual && (nomeAPI.includes(nomeManual) || nomeManual.includes(nomeAPI))) {
+            const conflitoComAPI = dadosAPI.some(apiItem => {
+                const nomeAPI = normalizarTextoParaComparacao(apiItem.nome);
+                
+                // 1. Mesmo falecido já retornado pela API oficial
+                if (nomeManual && nomeAPI && (nomeManual === nomeAPI || nomeAPI.includes(nomeManual) || nomeManual.includes(nomeAPI))) {
                     return true;
                 }
-            }
-            
-            return false;
-        });
 
-        if (!jaExiste) {
-            resultado.push({
-                ...item,
-                nome: item.nome || item.nome_falecido,
-                foto: item.foto || item.foto_url || null,
-                isEmergencia: true,
-                emergenciaIndex: index
+                // 2. Mesma sala com sobreposição de horário
+                const numSalaAPI = String(apiItem.sala).replace(/\D/g, '');
+                if (numSalaManual && numSalaAPI && numSalaManual === numSalaAPI) {
+                    const inicioAPI = new Date(apiItem.data_inicio);
+                    const fimAPI = new Date(apiItem.data_fim);
+                    return (inicioManual < fimAPI && fimManual > inicioAPI);
+                }
+                
+                return false;
             });
+            
+            if (conflitoComAPI) houveExclusao = true;
+            return !conflitoComAPI;
+        });
+        
+        if (houveExclusao) {
+            emergencyEntradas = entradasValidas;
+            salvarEntradasEmergencia();
+            if (typeof atualizarStatusEmergencia === 'function') {
+                setTimeout(atualizarStatusEmergencia, 0);
+            }
+        }
+    }
+    
+    // Concatena e aplica garantia final de não duplicar nomes idênticos no painel
+    const resultado = [...dadosAPI];
+    emergencyEntradas.forEach((item, index) => {
+        const nomeManual = normalizarTextoParaComparacao(item.nome);
+        const jaExiste = resultado.some(r => normalizarTextoParaComparacao(r.nome) === nomeManual);
+        if (!jaExiste) {
+            resultado.push({ ...item, isEmergencia: true, emergenciaIndex: index });
         }
     });
 
