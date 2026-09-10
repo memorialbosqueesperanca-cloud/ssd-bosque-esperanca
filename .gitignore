@@ -138,10 +138,11 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# Ignore local video files and editor temporary exports
-painel/videos/*.mp4
-painel/videos/*.mov
-painel/videos/*.webm
+# Ignore local video files, local video configuration per machine and local SQLite
+painel/videos/*
+!painel/videos/logo_bosque.png
+!painel/videos/placeholder.txt
+painel/video-config.json
 painel/js/Untitled*.css
 painel/js/Untitled*.txt
 backend/data/*.sqlite*

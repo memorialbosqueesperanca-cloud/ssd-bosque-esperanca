@@ -64,7 +64,12 @@ const excelUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize
 function lerConfiguracaoVideos() {
     try {
         if (!fs.existsSync(VIDEO_CONFIG_PATH)) {
-            return { hall: DEFAULT_VIDEOS_HALL, sala: DEFAULT_VIDEOS_SALA };
+            const exemploPath = path.join(__dirname, '..', 'painel', 'video-config.example.json');
+            if (fs.existsSync(exemploPath)) {
+                fs.copyFileSync(exemploPath, VIDEO_CONFIG_PATH);
+            } else {
+                salvarConfiguracaoVideos({ hall: DEFAULT_VIDEOS_HALL, sala: DEFAULT_VIDEOS_SALA });
+            }
         }
         const raw = fs.readFileSync(VIDEO_CONFIG_PATH, 'utf8');
         const parsed = JSON.parse(raw);
