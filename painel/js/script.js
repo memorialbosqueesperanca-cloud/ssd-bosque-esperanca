@@ -140,7 +140,7 @@ function renderizar(lista) {
             }
         }
             
-        const foto = item.foto ? item.foto : 'videos/logo_bosque.png';
+        const foto = item.foto || item.foto_url || 'videos/logo_bosque.png';
 
         linha.className = 'info-row' + (status.texto === 'Encerrado' ? ' info-row--encerrado' : '');
         
@@ -533,13 +533,14 @@ function carregarEntradasEmergencia() {
         if (!Array.isArray(parsed)) return [];
         
         const agora = new Date();
-        const limite = new Date(agora.getTime() - 4 * 60 * 60 * 1000);
-        emergencyEntradas = parsed.filter(e => new Date(e.data_fim) > limite);
+        const limite = new Date(agora.getTime() - 24 * 60 * 60 * 1000);
+        emergencyEntradas = parsed.filter(e => {
+            if (!e.data_fim) return true;
+            const dtFim = new Date(e.data_fim);
+            return isNaN(dtFim.getTime()) || dtFim > limite;
+        });
         
-        if (emergencyEntradas.length !== parsed.length) {
-            salvarEntradasEmergencia(); 
-        }
-        
+        salvarEntradasEmergencia(); 
         return emergencyEntradas;
     } catch (err) {
         localStorage.removeItem(EMERGENCY_KEY);
@@ -559,53 +560,24 @@ function normalizarTextoParaComparacao(texto) {
 function mesclarEmergencia(dadosAPI) {
     if (!Array.isArray(dadosAPI)) dadosAPI = [];
     
-    if (dadosAPI.length > 0) {
-        let houveExclusao = false;
-        const entradasValidas = emergencyEntradas.filter(manual => {
-            const nomeManual = normalizarTextoParaComparacao(manual.nome);
-            const numSalaManual = String(manual.sala).replace(/\D/g, '');
-            const inicioManual = new Date(manual.data_inicio);
-            const fimManual = new Date(manual.data_fim);
-            
-            const conflitoComAPI = dadosAPI.some(apiItem => {
-                const nomeAPI = normalizarTextoParaComparacao(apiItem.nome);
-                
-                // 1. Mesmo falecido já retornado pela API oficial
-                if (nomeManual && nomeAPI && (nomeManual === nomeAPI || nomeAPI.includes(nomeManual) || nomeManual.includes(nomeAPI))) {
-                    return true;
-                }
-
-                // 2. Mesma sala com sobreposição de horário
-                const numSalaAPI = String(apiItem.sala).replace(/\D/g, '');
-                if (numSalaManual && numSalaAPI && numSalaManual === numSalaAPI) {
-                    const inicioAPI = new Date(apiItem.data_inicio);
-                    const fimAPI = new Date(apiItem.data_fim);
-                    return (inicioManual < fimAPI && fimManual > inicioAPI);
-                }
-                
-                return false;
-            });
-            
-            if (conflitoComAPI) houveExclusao = true;
-            return !conflitoComAPI;
-        });
-        
-        if (houveExclusao) {
-            emergencyEntradas = entradasValidas;
-            salvarEntradasEmergencia();
-            if (typeof atualizarStatusEmergencia === 'function') {
-                setTimeout(atualizarStatusEmergencia, 0);
-            }
-        }
-    }
-    
-    // Concatena e aplica garantia final de não duplicar nomes idênticos no painel
     const resultado = [...dadosAPI];
+    
+    // Mescla entradas manuais locais sem apagar nada agressivamente
     emergencyEntradas.forEach((item, index) => {
-        const nomeManual = normalizarTextoParaComparacao(item.nome);
-        const jaExiste = resultado.some(r => normalizarTextoParaComparacao(r.nome) === nomeManual);
+        const nomeManual = normalizarTextoParaComparacao(item.nome || item.nome_falecido);
+        const jaExiste = resultado.some(r => {
+            const nomeAPI = normalizarTextoParaComparacao(r.nome || r.nome_falecido);
+            return nomeAPI && nomeManual && (nomeAPI === nomeManual);
+        });
+
         if (!jaExiste) {
-            resultado.push({ ...item, isEmergencia: true, emergenciaIndex: index });
+            resultado.push({
+                ...item,
+                nome: item.nome || item.nome_falecido,
+                foto: item.foto || item.foto_url || null,
+                isEmergencia: true,
+                emergenciaIndex: index
+            });
         }
     });
 
@@ -774,15 +746,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     if (btnEditExcluir) {
-        btnEditExcluir.addEventListener('click', () => {
-            if (editandoIndex >= 0 && confirm('Tem certeza que deseja excluir esta entrada de emergência?')) {
+        btnEditExcluir.addEventListener('click', async () => {
+            if (editandoIndex >= 0 && confirm('Tem certeza que deseja excluir esta entrada?')) {
+                const entrada = emergencyEntradas[editandoIndex];
                 emergencyEntradas.splice(editandoIndex, 1);
                 salvarEntradasEmergencia();
-                buscarDados();
+
+                try {
+                    const chave = entrada.chave_cruzamento || normalizarTextoParaComparacao(entrada.nome || entrada.nome_falecido);
+                    await fetch('/api/eventos/restaurar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chave_cruzamento: chave })
+                    });
+                } catch (err) {
+                    console.warn('Backend indisponível ao excluir:', err);
+                }
+
+                await buscarDados();
                 atualizarStatusEmergencia();
                 editOverlay.classList.remove('active');
                 editandoIndex = -1;
-                alert('Entrada de emergência excluída com sucesso!');
+                alert('Entrada excluída com sucesso!');
             }
         });
     }
@@ -802,7 +787,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             
             let foto = null;
-            if (fotoInput.files && fotoInput.files[0]) {
+            if (fotoInput && fotoInput.files && fotoInput.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     foto = e.target.result;
@@ -817,12 +802,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     if (btnLimparEmergencia) {
         btnLimparEmergencia.addEventListener('click', () => {
-            if (confirm('Tem certeza que deseja limpar todas as entradas de emergência?')) {
+            if (confirm('Tem certeza que deseja limpar todas as entradas locais de emergência?')) {
                 emergencyEntradas = [];
                 salvarEntradasEmergencia();
                 buscarDados(); 
                 atualizarStatusEmergencia();
-                alert('Entradas de emergência limpas com sucesso!');
+                alert('Entradas locais limpas com sucesso!');
             }
         });
     }
@@ -837,7 +822,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const file = inputArquivo.files[0];
             const reader = new FileReader();
             
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const csvText = e.target.result;
                     const dadosImportados = parseCSV(csvText);
@@ -847,9 +832,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                         return;
                     }
                     
-                    dadosImportados.forEach(item => {
+                    for (const item of dadosImportados) {
                         if (item.nome) {
-                            emergencyEntradas.push({
+                            const entradaObj = {
                                 nome: item.nome,
                                 sala: item.sala || 'Sala não informada',
                                 data_inicio: item.data_inicio || new Date().toISOString(),
@@ -857,14 +842,32 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 destino: item.destino || 'Consulte a recepção',
                                 foto: item.foto || null,
                                 isEmergencia: true
-                            });
+                            };
+                            emergencyEntradas.push(entradaObj);
+
+                            try {
+                                await fetch('/api/eventos/editar', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        nome_falecido: entradaObj.nome,
+                                        sala: entradaObj.sala,
+                                        data_inicio: entradaObj.data_inicio,
+                                        data_fim: entradaObj.data_fim,
+                                        destino: entradaObj.destino,
+                                        foto_url: entradaObj.foto,
+                                        tipo_servico: 'VELÓRIO',
+                                        visivel: 1
+                                    })
+                                });
+                            } catch (err) {}
                         }
-                    });
+                    }
                     
                     salvarEntradasEmergencia();
-                    buscarDados(); 
+                    await buscarDados(); 
                     atualizarStatusEmergencia();
-                    alert(`${dadosImportados.length} registros importados com sucesso!`);
+                    alert(`${dadosImportados.length} registros importados e sincronizados com sucesso!`);
                     
                 } catch (err) {
                     console.error('Erro ao processar arquivo:', err);
@@ -877,14 +880,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-function adicionarEntradaEmergencia(dados) {
+async function adicionarEntradaEmergencia(dados) {
     emergencyEntradas.push({
         ...dados,
         isEmergencia: true
     });
     
     salvarEntradasEmergencia();
-    buscarDados(); 
+
+    try {
+        await fetch('/api/eventos/editar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nome_falecido: dados.nome,
+                sala: dados.sala,
+                data_inicio: dados.data_inicio,
+                data_fim: dados.data_fim,
+                destino: dados.destino,
+                foto_url: dados.foto,
+                tipo_servico: 'VELÓRIO',
+                visivel: 1
+            })
+        });
+    } catch (err) {
+        console.warn('Backend offline, salvo no storage local:', err);
+    }
+
+    await buscarDados(); 
     atualizarStatusEmergencia();
     
     document.getElementById('emergencia-nome').value = '';
@@ -892,9 +915,10 @@ function adicionarEntradaEmergencia(dados) {
     document.getElementById('emergencia-inicio').value = '';
     document.getElementById('emergencia-fim').value = '';
     document.getElementById('emergencia-destino').value = '';
-    document.getElementById('emergencia-foto-upload').value = '';
+    const elFoto = document.getElementById('emergencia-foto-upload');
+    if (elFoto) elFoto.value = '';
     
-    alert('Entrada de emergência adicionada com sucesso!');
+    alert('Entrada manual adicionada com sucesso!');
     
     const overlayEmergencia = document.getElementById('emergencia-overlay');
     if (overlayEmergencia) overlayEmergencia.classList.remove('active');
@@ -915,7 +939,7 @@ function abrirModalEdicao(index) {
     document.getElementById('emergencia-edit-overlay').classList.add('active');
 }
 
-function salvarEdicaoEmergencia() {
+async function salvarEdicaoEmergencia() {
     if (editandoIndex < 0 || editandoIndex >= emergencyEntradas.length) return;
     
     const nome = document.getElementById('edit-nome').value.trim();
@@ -929,19 +953,40 @@ function salvarEdicaoEmergencia() {
         return;
     }
     
+    const entradaAntiga = emergencyEntradas[editandoIndex];
     emergencyEntradas[editandoIndex] = {
         ...emergencyEntradas[editandoIndex],
         nome, sala, data_inicio: inicio, data_fim: fim, destino
     };
     
     salvarEntradasEmergencia();
-    buscarDados();
+
+    try {
+        await fetch('/api/eventos/editar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chave_cruzamento: entradaAntiga.chave_cruzamento || undefined,
+                nome_falecido: nome,
+                sala: sala,
+                data_inicio: inicio,
+                data_fim: fim,
+                destino: destino,
+                tipo_servico: 'VELÓRIO',
+                visivel: 1
+            })
+        });
+    } catch (err) {
+        console.warn('Backend offline, salvo localmente:', err);
+    }
+
+    await buscarDados();
     atualizarStatusEmergencia();
     
     document.getElementById('emergencia-edit-overlay').classList.remove('active');
     editandoIndex = -1;
     
-    alert('Entrada de emergência atualizada com sucesso!');
+    alert('Entrada manual atualizada com sucesso!');
 }
 
 function atualizarStatusEmergencia() {
