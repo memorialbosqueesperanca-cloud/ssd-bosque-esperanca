@@ -562,12 +562,26 @@ function mesclarEmergencia(dadosAPI) {
     
     const resultado = [...dadosAPI];
     
-    // Mescla entradas manuais locais sem apagar nada agressivamente
+    // Mescla entradas manuais locais sem apagar nada e evitando duplicidades caso a API oficial já tenha o registro
     emergencyEntradas.forEach((item, index) => {
         const nomeManual = normalizarTextoParaComparacao(item.nome || item.nome_falecido);
+        const salaManualNorm = String(item.sala || '').replace(/\D/g, '');
+        
         const jaExiste = resultado.some(r => {
             const nomeAPI = normalizarTextoParaComparacao(r.nome || r.nome_falecido);
-            return nomeAPI && nomeManual && (nomeAPI === nomeManual);
+            const salaAPINorm = String(r.sala || '').replace(/\D/g, '');
+            
+            // 1. Mesmo nome exato
+            if (nomeAPI && nomeManual && nomeAPI === nomeManual) return true;
+            
+            // 2. Mesma sala com nome contido ou parecido
+            if (salaManualNorm && salaAPINorm && salaManualNorm === salaAPINorm) {
+                if (nomeAPI && nomeManual && (nomeAPI.includes(nomeManual) || nomeManual.includes(nomeAPI))) {
+                    return true;
+                }
+            }
+            
+            return false;
         });
 
         if (!jaExiste) {
