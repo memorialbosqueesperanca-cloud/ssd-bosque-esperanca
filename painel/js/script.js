@@ -209,17 +209,15 @@ function renderizar(lista) {
             }
         }
 
-        const estiloTextoLongo = `white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2;`;
-
         linha.innerHTML = `
             ${svgSeta}
             <div class="info-row__foto-wrapper">
                 <img class="info-row__foto" src="${foto}" onerror="this.src='videos/logo_bosque.png'">
             </div>
-            <div class="info-nome text-default" style="${estiloTextoLongo}">${item.nome || 'Homenageado'}</div>
-            <div class="info-sala text-default" style="${estiloTextoLongo}">${sala}</div>
+            <div class="info-nome text-default">${item.nome || 'Homenageado'}</div>
+            <div class="info-sala text-default">${sala}</div>
             <div class="info-horario text-default">${formatarHorario(item.data_inicio, item.data_fim)}</div>
-            <div class="info-destino text-default" style="${estiloTextoLongo}">${destinoTexto}</div>
+            <div class="info-destino text-default">${destinoTexto}</div>
             <div class="info-status text-highlight" style="color:${status.cor};">${status.texto}</div>
         `;
         corpo.appendChild(linha);
